@@ -1,179 +1,107 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Upload & Gallery</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Upload ảnh ImgBB + Sheet</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      padding: 20px;
-    }
-
-    h2 {
-      margin-top: 0;
-    }
-
-    .box {
-      background: #fff;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,.1);
-      margin-bottom: 20px;
-    }
-
-    button {
-      padding: 8px 15px;
-      border: none;
-      background: #1976d2;
-      color: #fff;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #125ca1;
-    }
-
-    #msg {
-      margin-top: 10px;
-      font-weight: bold;
-      color: green;
-    }
-
-    #gallery {
-      display: flex;
-      flex-wrap: wrap;
-    }
-
-    #gallery img {
-      width: 200px;
-      height: auto;
-      margin: 10px;
-      border-radius: 8px;
-      box-shadow: 0 0 6px rgba(0,0,0,.3);
-      background: #fff;
-    }
-
-    .loading {
-      color: #888;
-    }
-  </style>
+<style>
+body { font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; }
+img { max-width: 100%; border: 1px solid #ccc; }
+input, textarea { width: 100%; margin-bottom: 10px; }
+.card { border: 1px solid #ddd; padding: 10px; margin-top: 15px; }
+.name { color: blue; cursor: pointer; font-weight: bold; margin-top: 5px; }
+.note { display: none; margin-top: 5px; color: #555; }
+</style>
 </head>
+
 <body>
 
-<div class="box">
-  <h2>📤 Upload hình ảnh</h2>
-  <input type="file" id="file" accept="image/*">
-  <br><br>
-  <button onclick="uploadImage()">Upload</button>
-  <div id="msg"></div>
-</div>
+<h2>Upload ảnh lên ImgBB</h2>
 
-<div class="box">
-  <h2>🖼 Danh sách hình ảnh</h2>
-  <div id="gallery" class="loading">Đang tải ảnh...</div>
-</div>
+<input type="file" id="imageInput" accept="image/*">
+<input type="text" id="nameInput" placeholder="Tên ảnh (bỏ trống = tên mặc định)">
+<textarea id="noteInput" placeholder="Chú thích"></textarea>
+
+<button onclick="uploadImage()">Tải lên</button>
+<div id="status"></div>
+
+<hr>
+<h2>Danh sách ảnh</h2>
+<div id="gallery"></div>
 
 <script>
-/* ==================================================
-   🔴 DÁN LINK WEB APP CỦA GOOGLE SHEET 2 VÀO ĐÂY
-   ================================================== */
-const API_URL = "https://script.google.com/macros/s/AKfycbwX-qebnRCnwYwwkHQD3P-5X4t-fRYJ7MPw2dkN-w2ffVwjnditek7XHPnS24qbQdlh/exec";
+const IMGBB_API_KEY = "98bce19081883f35f02cec232ce565b5";
+const SHEET_API = "https://script.google.com/macros/s/AKfycbxqdQ-kYTCzRNFBKWa4GzWiyg6aLsPonz_ObsN8En11H_eNxEXTF7K6jaS4QEXWNA/exec";
 
-/* ==================================================
-   UPLOAD IMAGE
-   ================================================== */
 function uploadImage() {
-  const fileInput = document.getElementById("file");
-  const file = fileInput.files[0];
+  const file = imageInput.files[0];
+  if (!file) return alert("Chọn ảnh");
 
-  if (!file) {
-    alert("Vui lòng chọn hình!");
-    return;
-  }
+  status.textContent = "Đang tải lên...";
 
   const reader = new FileReader();
+  reader.onload = () => {
+    const base64 = reader.result.split(",")[1];
+    const form = new FormData();
+    form.append("key", IMGBB_API_KEY);
+    form.append("image", base64);
 
-  reader.onload = function () {
-    const formData = new URLSearchParams();
-    formData.append("action", "upload");
-    formData.append("filename", file.name);
-    formData.append("base64", reader.result);
-
-    fetch(API_URL, {
+    fetch("https://api.imgbb.com/1/upload", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: formData.toString()
+      body: form
     })
-    .then(res => res.text())
+    .then(r => r.json())
+    .then(d => {
+      if (!d.success) throw d;
+
+      const link = d.data.url;
+      const name = nameInput.value || d.data.image.filename;
+      const note = noteInput.value;
+
+      return fetch(SHEET_API, {
+        method: "POST",
+        body: JSON.stringify({ link, name, note })
+      });
+    })
     .then(() => {
-      document.getElementById("msg").innerText = "✅ Upload thành công!";
-      fileInput.value = "";
-      loadImages();
+      status.textContent = "Upload thành công!";
+      imageInput.value = "";
+      nameInput.value = "";
+      noteInput.value = "";
+      loadGallery();
     })
     .catch(err => {
-      alert("Upload lỗi!");
       console.error(err);
+      status.textContent = "Lỗi upload";
     });
   };
-
   reader.readAsDataURL(file);
 }
 
-/* ==================================================
-   LOAD IMAGE LIST
-   ================================================== */
-function loadImages() {
-  const gallery = document.getElementById("gallery");
-  gallery.innerHTML = "Đang tải ảnh...";
-
-
-  
-  fetch(API_URL + "?action=list")
-  .then(res => res.text())
-  .then(txt => {
-    console.log("API RAW:", txt);
-
-    let list;
-    try {
-      list = JSON.parse(txt);
-    } catch (e) {
-      throw new Error("API không trả JSON");
-    }
-
-    return list;
-  })
-  .then(list => {
-    gallery.innerHTML = "";
-
-    if (!Array.isArray(list) || list.length === 0) {
-      gallery.innerHTML = "<i>Chưa có hình nào</i>";
-      return;
-    }
-
-    list.forEach(url => {
-      const img = document.createElement("img");
-      img.src = url;
-      img.loading = "lazy";
-      gallery.appendChild(img);
+function loadGallery() {
+  fetch(SHEET_API)
+    .then(r => r.json())
+    .then(data => {
+      gallery.innerHTML = "";
+      data.reverse().forEach(item => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <img src="${item.link}">
+          <div class="name">${item.name}</div>
+          <div class="note">${item.note || "(không có chú thích)"}</div>
+        `;
+        div.querySelector(".name").onclick = () => {
+          const n = div.querySelector(".note");
+          n.style.display = n.style.display === "none" ? "block" : "none";
+        };
+        gallery.appendChild(div);
+      });
     });
-  })
-  .catch(err => {
-    gallery.innerHTML = "❌ Không load được ảnh";
-    console.error("LOAD ERROR:", err);
-  });
-
 }
 
-/* ==================================================
-   AUTO LOAD WHEN OPEN PAGE
-   ================================================== */
-loadImages();
+loadGallery();
 </script>
 
 </body>
