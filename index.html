@@ -1,163 +1,163 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<title>Upload & Gallery</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <title>Upload & Gallery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<style>
-body {
-  font-family: Arial;
-  background: #f4f4f4;
-  padding: 20px;
-}
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
 
-.box {
-  background: #fff;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,.1);
-  margin-bottom: 20px;
-}
+    h2 {
+      margin-top: 0;
+    }
 
-input, textarea {
-  width: 100%;
-  margin-top: 6px;
-  padding: 6px;
-}
+    .box {
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,.1);
+      margin-bottom: 20px;
+    }
 
-button {
-  margin-top: 10px;
-  padding: 8px 16px;
-  background: #1976d2;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
+    button {
+      padding: 8px 15px;
+      border: none;
+      background: #1976d2;
+      color: #fff;
+      border-radius: 5px;
+      cursor: pointer;
+    }
 
-#msg {
-  margin-top: 10px;
-  font-weight: bold;
-  color: green;
-}
+    button:hover {
+      background: #125ca1;
+    }
 
-.gallery {
-  display: flex;
-  flex-wrap: wrap;
-}
+    #msg {
+      margin-top: 10px;
+      font-weight: bold;
+      color: green;
+    }
 
-.card {
-  width: 220px;
-  margin: 10px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 0 6px rgba(0,0,0,.3);
-  padding: 10px;
-  text-align: center;
-}
+    #gallery {
+      display: flex;
+      flex-wrap: wrap;
+    }
 
-.card img {
-  width: 100%;
-  border-radius: 6px;
-  cursor: pointer;
-}
+    #gallery img {
+      width: 200px;
+      height: auto;
+      margin: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 6px rgba(0,0,0,.3);
+      background: #fff;
+    }
 
-.card .name {
-  margin-top: 8px;
-  font-weight: bold;
-}
-</style>
+    .loading {
+      color: #888;
+    }
+  </style>
 </head>
-
 <body>
 
 <div class="box">
-<h2>📤 Upload hình</h2>
-
-<label>Tên hiển thị (bỏ trống = tên gốc)</label>
-<input type="text" id="name">
-
-<label>Chú thích</label>
-<textarea id="note" rows="3"></textarea>
-
-<label>Chọn hình</label>
-<input type="file" id="file" accept="image/*">
-
-<button onclick="uploadImage()">Upload</button>
-<div id="msg"></div>
+  <h2>📤 Upload hình ảnh</h2>
+  <input type="file" id="file" accept="image/*">
+  <br><br>
+  <button onclick="uploadImage()">Upload</button>
+  <div id="msg"></div>
 </div>
 
 <div class="box">
-<h2>🖼 Gallery</h2>
-<div class="gallery" id="gallery">Đang tải...</div>
+  <h2>🖼 Danh sách hình ảnh</h2>
+  <div id="gallery" class="loading">Đang tải ảnh...</div>
 </div>
 
 <script>
-// 🔴 LINK WEB APP CỦA SHEET 2
-const API_URL = "https://script.google.com/macros/s/AKfycbztPA-cqPCVSfzl3EbWZ9HGUXJ9bAUetmILmk9T8E05tYDoIADmQSlmdQYaFVLPT60Q/exec";
+/* ==================================================
+   🔴 DÁN LINK WEB APP CỦA GOOGLE SHEET 2 VÀO ĐÂY
+   ================================================== */
+const API_URL = "https://script.google.com/macros/s/AKfycbxG38zsfWLDNZaV_tSDdFmsVQXXchRuKRbYN35D88shb3nLfgDT4urOmRvLE7rEnUEc/exec";
 
+/* ==================================================
+   UPLOAD IMAGE
+   ================================================== */
 function uploadImage() {
-  const file = document.getElementById("file").files[0];
-  if (!file) return alert("Chọn hình!");
+  const fileInput = document.getElementById("file");
+  const file = fileInput.files[0];
+
+  if (!file) {
+    alert("Vui lòng chọn hình!");
+    return;
+  }
 
   const reader = new FileReader();
-  reader.onload = () => {
+
+  reader.onload = function () {
+    const formData = new URLSearchParams();
+    formData.append("action", "upload");
+    formData.append("filename", file.name);
+    formData.append("base64", reader.result);
+
     fetch(API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        action: "upload",
-        filename: file.name,
-        name: document.getElementById("name").value,
-        note: document.getElementById("note").value,
-        base64: reader.result
-      })
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: formData.toString()
     })
+    .then(res => res.text())
     .then(() => {
       document.getElementById("msg").innerText = "✅ Upload thành công!";
-      document.getElementById("file").value = "";
-      document.getElementById("name").value = "";
-      document.getElementById("note").value = "";
+      fileInput.value = "";
       loadImages();
+    })
+    .catch(err => {
+      alert("Upload lỗi!");
+      console.error(err);
     });
   };
+
   reader.readAsDataURL(file);
 }
 
+/* ==================================================
+   LOAD IMAGE LIST
+   ================================================== */
 function loadImages() {
-  fetch(API_URL + "?action=list")
-    .then(r => r.json())
-    .then(list => {
-      const g = document.getElementById("gallery");
-      g.innerHTML = "";
+  const gallery = document.getElementById("gallery");
+  gallery.innerHTML = "Đang tải ảnh...";
 
-      if (!list.length) {
-        g.innerHTML = "<i>Chưa có hình</i>";
+  fetch(API_URL + "?action=list")
+    .then(res => res.json())
+    .then(list => {
+      gallery.innerHTML = "";
+
+      if (list.length === 0) {
+        gallery.innerHTML = "<i>Chưa có hình nào</i>";
         return;
       }
 
-      list.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "card";
-
+      list.forEach(url => {
         const img = document.createElement("img");
-        img.src = item.url;
-        img.onclick = () => {
-          if (item.note) alert(item.note);
-        };
-
-        const name = document.createElement("div");
-        name.className = "name";
-        name.innerText = item.name || "";
-
-        card.appendChild(img);
-        card.appendChild(name);
-        g.appendChild(card);
+        img.src = url;
+        img.loading = "lazy";
+        gallery.appendChild(img);
       });
+    })
+    .catch(err => {
+      gallery.innerHTML = "❌ Không load được ảnh";
+      console.error(err);
     });
 }
 
+/* ==================================================
+   AUTO LOAD WHEN OPEN PAGE
+   ================================================== */
 loadImages();
 </script>
 
