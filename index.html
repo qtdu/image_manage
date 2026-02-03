@@ -17,7 +17,7 @@ td:focus{outline:2px solid #4caf50}
 <h3>Thêm dữ liệu</h3>
 
 <input id="link" placeholder="Link">
-<input id="name" placeholder="Name">
+<input id="name1" placeholder="Name">
 <input id="note" placeholder="Note">
 <button onclick="add()">Thêm</button>
 
@@ -37,27 +37,67 @@ td:focus{outline:2px solid #4caf50}
 </table>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbwf754kAsopqGGJtCoytFNvG9a_WjD6Q0IZIjLrRXhvn8orbnqcwNW8H84eOuJAXPQ/exec";
+const API = "https://script.google.com/macros/s/AKfycbymlIeO7SqDLqE_3HHGbhYyPlKiT1mlBSR58njBzUWHUGAbOQYdMnSvX7CeL0OkX48/exec";
+
+function load(){
+  fetch(API).then(r=>r.json()).then(data=>{
+    const tb = document.getElementById("list");
+    tb.innerHTML = "";
+    data.reverse().forEach(d=>{
+      tb.innerHTML += `
+      <tr>
+        <td>${d.time}</td>
+        <td contenteditable onkeydown="save(event,${d.row},2,this)">${d.link}</td>
+        <td contenteditable onkeydown="save(event,${d.row},3,this)">${d.name1}</td>
+        <td contenteditable onkeydown="save(event,${d.row},4,this)">${d.note}</td>
+        <td><button onclick="del(${d.row})">X</button></td>
+      </tr>`;
+    });
+  });
+}
+
+function post(data){
+  return fetch(API,{
+    method:"POST",
+    body:JSON.stringify(data)
+  });
+}
 
 function add(){
-  const linkInput = document.getElementById("link");
-  const nameInput = document.getElementById("nameInput");
-  const noteInput = document.getElementById("note");
-
   post({
-    action: "add",
-    link: linkInput.value,
-    name: nameInput.value,
-    note: noteInput.value
+    action:"add",
+    link:link.value,
+    name:name1.value,
+    note:note.value
   }).then(()=>{
-    linkInput.value = "";
-    nameInput.value = "";
-    noteInput.value = "";
+    link.value = "";
+    name1.value = "";
+    note.value = "";
     load();
   });
 }
-</script>
 
+function save(e,row,col,el){
+  if(e.key==="Enter"){
+    e.preventDefault();
+    post({
+      action:"update",
+      row:row,
+      col:col,
+      value:el.textContent
+    });
+    el.blur();
+  }
+}
+
+function del(row){
+  if(confirm("Xóa dòng này?")){
+    post({action:"delete",row:row}).then(load);
+  }
+}
+
+load();
+</script>
 
 </body>
 </html>
