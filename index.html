@@ -38,10 +38,13 @@ function uploadImage() {
 
     const res = await fetch(API_URL, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({
         name: file.name,
         type: file.type,
-        base64
+        base64: base64
       })
     });
 
