@@ -6,18 +6,44 @@
 <title>Google Sheet CRUD + ImgBB</title>
 
 <style>
-*{
-  box-sizing:border-box;
-}
+*{box-sizing:border-box}
 
-body{
+html,body{
+  height:100%;
+  margin:0;
+  overflow:hidden; /* ❗ trang không cuộn */
   font-family:sans-serif;
-  max-width:1100px;
-  margin:auto;
-  padding:12px;
 }
 
-/* ===== TIÊU ĐỀ + NÚT THÊM ===== */
+/* ===== APP LAYOUT ===== */
+.app{
+  height:100%;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ===== TOP PANEL ===== */
+.top-panel{
+  background:#f3f6fb;
+  border-bottom:2px solid #d0d7e2;
+  padding:10px 12px;
+}
+
+.top-title{
+  cursor:pointer;
+  user-select:none;
+  background:#2d6cdf;
+  color:#fff;
+  padding:8px 12px;
+  border-radius:4px;
+}
+
+/* ===== COLLAPSIBLE ===== */
+.top-content{
+  margin-top:10px;
+}
+
+/* ===== HEADER ROW ===== */
 .header-row{
   display:flex;
   align-items:center;
@@ -26,7 +52,7 @@ body{
 }
 
 /* ===== INPUT / BUTTON ===== */
-input, button{
+input,button{
   padding:8px;
   font-size:14px;
 }
@@ -36,53 +62,83 @@ button{
   white-space:nowrap;
 }
 
-/* ===== UPLOAD ROW ===== */
+/* ===== UPLOAD ===== */
 .upload-row{
   display:flex;
   align-items:center;
   gap:8px;
-  flex-wrap:nowrap;           /* ❗ KHÔNG XUỐNG DÒNG */
+  flex-wrap:nowrap;
 }
 
-/* file input chiếm phần còn lại */
 .upload-row input[type="file"]{
   flex:1;
-  min-width:0;               /* ❗ fix tràn mobile */
+  min-width:0;
 }
 
-/* ===== PREVIEW ẢNH NHỎ ===== */
 img.preview{
-  width:60px;
-  height:60px;
+  width:48px;
+  height:48px;
   object-fit:cover;
   border:1px solid #ccc;
   display:none;
-  flex-shrink:0;             /* ❗ không bị ép nhỏ */
+  flex-shrink:0;
 }
 
-/* ===== FORM INPUT ===== */
+/* ===== FORM ===== */
 .form-row{
   display:grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns:1fr 1fr;
   gap:8px;
-  margin-top:8px;
+  margin-top:6px;
+}
+
+/* ===== TABLE PANEL ===== */
+.table-panel{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+/* ===== TABLE HEADER ===== */
+.table-header{
+  background:#1f4fbf;
+  color:#fff;
+  padding:8px 12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.table-header input{
+  max-width:240px;
+}
+
+/* ===== TABLE SCROLL ===== */
+.table-wrap{
+  flex:1;
+  overflow:auto;
+  background:#fff;
 }
 
 /* ===== TABLE ===== */
-.table-wrap{
-  overflow-x:auto;
-}
-
 table{
   width:100%;
   border-collapse:collapse;
   min-width:650px;
 }
 
-th, td{
-  border:1px solid #ccc;
+thead th{
+  position:sticky;
+  top:0;
+  background:#2d6cdf;
+  color:#fff;
+  z-index:2;
+}
+
+th,td{
+  border:1px solid #ddd;
   padding:6px;
-  text-align:left;
   vertical-align:top;
 }
 
@@ -95,222 +151,178 @@ td:focus{
 }
 
 img.thumb{
-  max-width:100px;
+  max-width:80px;
   display:block;
 }
 
-/* ================= MOBILE ================= */
+/* ===== MOBILE ===== */
 @media(max-width:768px){
-
-  .header-row{
-    flex-direction:row;
-  }
-
-  .form-row{
-    grid-template-columns:1fr;
-  }
-
-  table{
-    font-size:13px;
-  }
-
-  img.thumb{
-    max-width:80px;
-  }
+  .form-row{grid-template-columns:1fr}
+  img.thumb{max-width:60px}
 }
-
-/* ===== MOBILE NHỎ (ĐIỆN THOẠI) ===== */
-@media(max-width:480px){
-
-  button{
-    padding:6px 8px;
-    font-size:13px;
-  }
-
-  img.preview{
-    width:44px;
-    height:44px;
-  }
-}
-
 </style>
 </head>
 
 <body>
 
-<!-- ================= UPLOAD ================= -->
-<h3>📤 Upload ảnh</h3>
+<div class="app">
 
-<div class="upload-row">
-  <input type="file" id="imageInput" accept="image/*" onchange="previewLocal(this)">
-  <button onclick="uploadImage()">Upload ảnh</button>
-  <img id="preview" class="preview">
-</div>
+  <!-- ===== TOP PANEL ===== -->
+  <div class="top-panel">
 
-<div id="status"></div>
+    <div class="top-title" onclick="toggleTop()">
+      📤 Upload ảnh (ImgBB)
+    </div>
 
-<hr>
+    <div class="top-content" id="topContent">
 
-<!-- ================= ADD ================= -->
-<div class="header-row">
-  <h3>➕ Thêm dữ liệu</h3>
-  <button onclick="add()">Thêm</button>
-</div>
+      <div class="upload-row">
+        <input type="file" id="imageInput" accept="image/*" onchange="previewLocal(this)">
+        <button onclick="uploadImage()">Upload</button>
+        <img id="preview" class="preview">
+      </div>
 
-<!-- Link ảnh ẨN -->
-<input id="link" type="hidden">
+      <div id="status"></div>
 
-<div class="form-row">
-  <input id="name1" placeholder="Name">
-  <input id="note" placeholder="Note">
-</div>
+      <hr>
 
-<hr>
+      <div class="header-row">
+        <h3>➕ Thêm dữ liệu</h3>
+        <button onclick="add()">Thêm</button>
+      </div>
 
-<!-- ================= TABLE ================= -->
-<h3>📋 Danh sách</h3>
-<div class="table-wrap">
-<table>
-<thead>
-<tr>
-  <th>Time</th>
-  <th>Ảnh</th>
-  <th>Name</th>
-  <th>Note</th>
-  <th>X</th>
-</tr>
-</thead>
-<tbody id="list"></tbody>
-</table>
+      <input id="link" type="hidden">
+
+      <div class="form-row">
+        <input id="name1" placeholder="Name">
+        <input id="note" placeholder="Note">
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== TABLE ===== -->
+  <div class="table-panel">
+
+    <div class="table-header">
+      <b>📋 Danh sách</b>
+      <input id="searchName" placeholder="Tìm theo Name..." oninput="filterTable()">
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Ảnh</th>
+            <th>Name</th>
+            <th>Note</th>
+            <th>X</th>
+          </tr>
+        </thead>
+        <tbody id="list"></tbody>
+      </table>
+    </div>
+
+  </div>
+
 </div>
 
 <script>
-/* ================= CONFIG ================= */
-const SHEET_API = "https://script.google.com/macros/s/AKfycbymlIeO7SqDLqE_3HHGbhYyPlKiT1mlBSR58njBzUWHUGAbOQYdMnSvX7CeL0OkX48/exec";
-const IMGBB_KEY = "98bce19081883f35f02cec232ce565b5";
+const SHEET_API="https://script.google.com/macros/s/AKfycbymlIeO7SqDLqE_3HHGbhYyPlKiT1mlBSR58njBzUWHUGAbOQYdMnSvX7CeL0OkX48/exec";
+const IMGBB_KEY="98bce19081883f35f02cec232ce565b5";
 
-/* ================= LOCAL PREVIEW ================= */
+/* ===== COLLAPSE ===== */
+function toggleTop(){
+  const el=document.getElementById("topContent");
+  el.style.display = el.style.display==="none" ? "block" : "none";
+}
+
+/* ===== PREVIEW ===== */
 function previewLocal(input){
-  const file = input.files[0];
-  if(!file) return;
-
-  const img = document.getElementById("preview");
-  img.src = URL.createObjectURL(file);
-  img.style.display = "block";
+  const f=input.files[0];
+  if(!f) return;
+  preview.src=URL.createObjectURL(f);
+  preview.style.display="block";
 }
 
-/* ================= LOAD DATA ================= */
+/* ===== LOAD ===== */
 function load(){
-  fetch(SHEET_API)
-    .then(r=>r.json())
-    .then(data=>{
-      const tb = document.getElementById("list");
-      tb.innerHTML = "";
-
-      data.reverse().forEach(d=>{
-        tb.innerHTML += `
-        <tr>
-          <td>${d.time}</td>
-          <td>
-            <a href="${d.link}" target="_blank">
-              <img class="thumb" src="${d.link}">
-            </a>
-          </td>
-          <td contenteditable
-              onkeydown="save(event,${d.row},3,this)">
-              ${d.name}
-          </td>
-          <td contenteditable
-              onkeydown="save(event,${d.row},4,this)">
-              ${d.note}
-          </td>
-          <td>
-            <button onclick="del(${d.row})">X</button>
-          </td>
-        </tr>`;
-      });
+  fetch(SHEET_API).then(r=>r.json()).then(data=>{
+    list.innerHTML="";
+    data.reverse().forEach(d=>{
+      list.innerHTML+=`
+      <tr>
+        <td><img class="thumb" src="${d.link}"></td>
+        <td class="col-name" contenteditable onkeydown="save(event,${d.row},3,this)">${d.name}</td>
+        <td contenteditable onkeydown="save(event,${d.row},4,this)">${d.note}</td>
+        <td><button onclick="del(${d.row})">X</button></td>
+      </tr>`;
     });
-}
-
-/* ================= POST ================= */
-function post(data){
-  return fetch(SHEET_API,{
-    method:"POST",
-    body:JSON.stringify(data)
   });
 }
 
-/* ================= ADD ================= */
+/* ===== SEARCH ===== */
+function filterTable(){
+  const k=searchName.value.toLowerCase();
+  document.querySelectorAll("#list tr").forEach(tr=>{
+    const t=tr.querySelector(".col-name").textContent.toLowerCase();
+    tr.style.display=t.includes(k)?"":"none";
+  });
+}
+
+/* ===== POST ===== */
+function post(d){
+  return fetch(SHEET_API,{method:"POST",body:JSON.stringify(d)});
+}
+
+/* ===== ADD ===== */
 function add(){
   if(!link.value) return alert("Chưa upload ảnh");
-
-  post({
-    action:"add",
-    link: link.value,
-    name: name1.value,
-    note: note.value
-  }).then(()=>{
-    name1.value="";
-    note.value="";
-    preview.style.display="none";
+  post({action:"add",link:link.value,name:name1.value,note:note.value}).then(()=>{
+    name1.value=note.value="";
     imageInput.value="";
+    preview.style.display="none";
     link.value="";
     load();
   });
 }
 
-/* ================= SAVE ================= */
-function save(e,row,col,el){
+/* ===== SAVE ===== */
+function save(e,r,c,el){
   if(e.key==="Enter"){
     e.preventDefault();
-    post({
-      action:"update",
-      row:row,
-      col:col,
-      value:el.textContent.trim()
-    });
+    post({action:"update",row:r,col:c,value:el.textContent.trim()});
     el.blur();
   }
 }
 
-/* ================= DELETE ================= */
-function del(row){
-  if(confirm("Xóa dòng này?")){
-    post({action:"delete",row:row}).then(load);
-  }
+/* ===== DELETE ===== */
+function del(r){
+  if(confirm("Xóa dòng này?")) post({action:"delete",row:r}).then(load);
 }
 
-/* ================= IMGBB UPLOAD ================= */
+/* ===== UPLOAD ===== */
 function uploadImage(){
-  const file = imageInput.files[0];
-  if(!file) return alert("Chọn ảnh trước");
-
+  const f=imageInput.files[0];
+  if(!f) return alert("Chọn ảnh");
   status.textContent="Đang upload...";
-
-  const reader = new FileReader();
-  reader.onload=()=>{
-    const base64 = reader.result.split(",")[1];
-    const fd = new FormData();
-    fd.append("key", IMGBB_KEY);
-    fd.append("image", base64);
-
-    fetch("https://api.imgbb.com/1/upload",{
-      method:"POST",
-      body:fd
-    })
-    .then(r=>r.json())
-    .then(res=>{
-      if(res.success){
-        link.value = res.data.url;
-        preview.src = res.data.url;
-        preview.style.display="block";
-        status.textContent="Upload xong ✔";
-      }else{
-        status.textContent="Upload lỗi";
-      }
-    });
+  const rd=new FileReader();
+  rd.onload=()=>{
+    const fd=new FormData();
+    fd.append("key",IMGBB_KEY);
+    fd.append("image",rd.result.split(",")[1]);
+    fetch("https://api.imgbb.com/1/upload",{method:"POST",body:fd})
+      .then(r=>r.json())
+      .then(res=>{
+        if(res.success){
+          link.value=res.data.url;
+          preview.src=res.data.url;
+          preview.style.display="block";
+          status.textContent="Upload xong ✔";
+        }
+      });
   };
-  reader.readAsDataURL(file);
+  rd.readAsDataURL(f);
 }
 
 load();
