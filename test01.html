@@ -42,7 +42,7 @@ html,body{
   margin-top:10px;
   overflow:hidden;
   transition:all .25s ease;
-  max-height:500px;
+  max-height:520px;
   opacity:1;
 }
 
@@ -100,8 +100,8 @@ img.preview{
 
 textarea{
   resize:vertical;
-  min-height:48px;
-  max-height:120px;
+  min-height:88px;   /* ~4 dòng */
+  max-height:160px;
   overflow:auto;
 }
 
@@ -151,12 +151,21 @@ thead th{
 th,td{
   border:1px solid #ddd;
   padding:6px;
+  vertical-align:top;
 }
 
-td[contenteditable]{background:#f9f9f9}
-td:focus{outline:2px solid #4caf50}
+td[contenteditable]{
+  background:#f9f9f9;
+  white-space:pre-wrap; /* ⭐ QUAN TRỌNG: GIỮ XUỐNG DÒNG */
+}
 
-img.thumb{max-width:80px}
+td:focus{
+  outline:2px solid #4caf50;
+}
+
+img.thumb{
+  max-width:80px;
+}
 
 /* ===== MOBILE ===== */
 @media(max-width:768px){
@@ -192,7 +201,7 @@ img.thumb{max-width:80px}
 
       <div class="form-row">
         <input id="name1" placeholder="Name">
-        <textarea id="note" placeholder="Note (ít nhất 2 dòng)"></textarea>
+        <textarea id="note" rows="4" placeholder="Note (4 dòng, xuống dòng OK)"></textarea>
       </div>
 
     </div>
@@ -233,7 +242,7 @@ img.thumb{max-width:80px}
 const SHEET_API="https://script.google.com/macros/s/AKfycbymlIeO7SqDLqE_3HHGbhYyPlKiT1mlBSR58njBzUWHUGAbOQYdMnSvX7CeL0OkX48/exec";
 const IMGBB_KEY="98bce19081883f35f02cec232ce565b5";
 
-/* ===== DOM REFERENCES (FIX LỖI CHÍNH) ===== */
+/* ===== DOM ===== */
 const status = document.getElementById("status");
 const preview = document.getElementById("preview");
 const imageInput = document.getElementById("imageInput");
@@ -244,12 +253,12 @@ const topContent = document.getElementById("topContent");
 const list = document.getElementById("list");
 const searchName = document.getElementById("searchName");
 
-/* ===== TOGGLE TOP ===== */
+/* ===== TOGGLE ===== */
 function toggleTop(){ topContent.classList.toggle("hide"); }
 function hideTop(){ topContent.classList.add("hide"); }
 function showTop(){ topContent.classList.remove("hide"); }
 
-/* ===== PREVIEW LOCAL ===== */
+/* ===== PREVIEW ===== */
 function previewLocal(i){
   const f=i.files[0];
   if(!f) return;
@@ -262,15 +271,22 @@ function load(){
   fetch(SHEET_API).then(r=>r.json()).then(data=>{
     list.innerHTML="";
     data.reverse().forEach(d=>{
-      list.innerHTML+=`
-      <tr>
+      const tr=document.createElement("tr");
+
+      tr.innerHTML=`
         <td><img class="thumb" src="${d.link}"></td>
-        <td class="col-name" contenteditable
-            onkeydown="save(event,${d.row},3,this)">${d.name}</td>
-        <td contenteditable
-            onkeydown="save(event,${d.row},4,this)">${d.note}</td>
+        <td class="col-name" contenteditable></td>
+        <td contenteditable></td>
         <td><button onclick="del(${d.row})">X</button></td>
-      </tr>`;
+      `;
+
+      tr.children[1].innerText=d.name;
+      tr.children[2].innerText=d.note;
+
+      tr.children[1].onkeydown=e=>save(e,d.row,3,tr.children[1]);
+      tr.children[2].onkeydown=e=>save(e,d.row,4,tr.children[2]);
+
+      list.appendChild(tr);
     });
   });
 }
@@ -279,7 +295,7 @@ function load(){
 function filterTable(){
   const k=searchName.value.toLowerCase();
   document.querySelectorAll("#list tr").forEach(tr=>{
-    const t=tr.querySelector(".col-name").textContent.toLowerCase();
+    const t=tr.querySelector(".col-name").innerText.toLowerCase();
     tr.style.display=t.includes(k)?"":"none";
   });
 }
@@ -292,23 +308,32 @@ function post(d){
 /* ===== ADD ===== */
 function add(){
   if(!link.value) return alert("⚠️ Upload ảnh trước");
-  post({action:"add",link:link.value,name:name1.value,note:note.value})
-    .then(()=>{
-      name1.value="";
-      note.value="";
-      imageInput.value="";
-      preview.style.display="none";
-      link.value="";
-      status.textContent="";
-      load();
-    });
+  post({
+    action:"add",
+    link:link.value,
+    name:name1.value,
+    note:note.value
+  }).then(()=>{
+    name1.value="";
+    note.value="";
+    imageInput.value="";
+    preview.style.display="none";
+    link.value="";
+    status.textContent="";
+    load();
+  });
 }
 
-/* ===== SAVE ===== */
+/* ===== SAVE (GIỮ \n) ===== */
 function save(e,r,c,el){
-  if(e.key==="Enter"){
+  if(e.key==="Enter" && !e.shiftKey){
     e.preventDefault();
-    post({action:"update",row:r,col:c,value:el.textContent.trim()});
+    post({
+      action:"update",
+      row:r,
+      col:c,
+      value:el.innerText
+    });
     el.blur();
   }
 }
@@ -320,7 +345,7 @@ function del(r){
   }
 }
 
-/* ===== IMGBB UPLOAD ===== */
+/* ===== IMGBB ===== */
 function uploadImage(){
   const f=imageInput.files[0];
   if(!f) return alert("Chọn ảnh trước");
@@ -347,10 +372,6 @@ function uploadImage(){
           status.textContent="❌ Upload lỗi";
           status.style.color="red";
         }
-      })
-      .catch(()=>{
-        status.textContent="❌ Không kết nối được ImgBB";
-        status.style.color="red";
       });
   };
   rd.readAsDataURL(f);
