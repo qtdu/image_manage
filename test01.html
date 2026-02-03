@@ -15,15 +15,17 @@ body{
   padding:12px;
 }
 
-h3{
-  margin-top:18px;
+/* ===== HEADER ROW ===== */
+.header-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
 }
 
 /* ===== INPUT / BUTTON ===== */
 input,button{
-  width:100%;
   padding:8px;
-  margin:6px 0;
   font-size:14px;
 }
 
@@ -31,19 +33,33 @@ button{
   cursor:pointer;
 }
 
-/* ===== PREVIEW IMAGE ===== */
-img.preview{
-  max-width:100%;
-  border:1px solid #ccc;
-  margin-top:8px;
+/* ===== UPLOAD ROW ===== */
+.upload-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
 }
 
-/* ===== FORM GRID (PC) ===== */
+.upload-row input[type="file"]{
+  flex:1;
+}
+
+/* ===== PREVIEW THUMB ===== */
+img.preview{
+  width:60px;
+  height:60px;
+  object-fit:cover;
+  border:1px solid #ccc;
+  display:none;
+}
+
+/* ===== FORM ===== */
 .form-row{
   display:grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr;
   gap:8px;
-  align-items:center;
+  margin-top:8px;
 }
 
 /* ===== TABLE ===== */
@@ -60,7 +76,6 @@ table{
 th,td{
   border:1px solid #ccc;
   padding:6px;
-  text-align:left;
   vertical-align:top;
 }
 
@@ -73,8 +88,7 @@ td:focus{
 }
 
 img.thumb{
-  max-width:120px;
-  height:auto;
+  max-width:100px;
   display:block;
 }
 
@@ -84,12 +98,9 @@ img.thumb{
     grid-template-columns:1fr;
   }
 
-  table{
-    font-size:13px;
-  }
-
-  img.thumb{
-    max-width:90px;
+  .header-row{
+    flex-direction:column;
+    align-items:flex-start;
   }
 }
 </style>
@@ -97,24 +108,36 @@ img.thumb{
 
 <body>
 
-<h3>📤 Upload ảnh (ImgBB)</h3>
-<input type="file" id="imageInput" accept="image/*">
-<button onclick="uploadImage()">Upload ảnh</button>
+<!-- ================= UPLOAD ================= -->
+<h3>📤 Upload ảnh</h3>
+
+<div class="upload-row">
+  <input type="file" id="imageInput" accept="image/*" onchange="previewLocal(this)">
+  <button onclick="uploadImage()">Upload ảnh</button>
+  <img id="preview" class="preview">
+</div>
+
 <div id="status"></div>
-<img id="preview" class="preview" style="display:none">
 
 <hr>
 
-<h3>➕ Thêm dữ liệu</h3>
+<!-- ================= ADD ================= -->
+<div class="header-row">
+  <h3>➕ Thêm dữ liệu</h3>
+  <button onclick="add()">Thêm</button>
+</div>
+
+<!-- Link ảnh ẨN -->
+<input id="link" type="hidden">
+
 <div class="form-row">
-  <input id="link" placeholder="Link ảnh (tự điền sau upload)">
   <input id="name1" placeholder="Name">
   <input id="note" placeholder="Note">
-  <button onclick="add()">Thêm</button>
 </div>
 
 <hr>
 
+<!-- ================= TABLE ================= -->
 <h3>📋 Danh sách</h3>
 <div class="table-wrap">
 <table>
@@ -136,6 +159,16 @@ img.thumb{
 const SHEET_API = "https://script.google.com/macros/s/AKfycbymlIeO7SqDLqE_3HHGbhYyPlKiT1mlBSR58njBzUWHUGAbOQYdMnSvX7CeL0OkX48/exec";
 const IMGBB_KEY = "98bce19081883f35f02cec232ce565b5";
 
+/* ================= LOCAL PREVIEW ================= */
+function previewLocal(input){
+  const file = input.files[0];
+  if(!file) return;
+
+  const img = document.getElementById("preview");
+  img.src = URL.createObjectURL(file);
+  img.style.display = "block";
+}
+
 /* ================= LOAD DATA ================= */
 function load(){
   fetch(SHEET_API)
@@ -148,23 +181,19 @@ function load(){
         tb.innerHTML += `
         <tr>
           <td>${d.time}</td>
-
           <td>
             <a href="${d.link}" target="_blank">
               <img class="thumb" src="${d.link}">
             </a>
           </td>
-
           <td contenteditable
               onkeydown="save(event,${d.row},3,this)">
               ${d.name}
           </td>
-
           <td contenteditable
               onkeydown="save(event,${d.row},4,this)">
               ${d.note}
           </td>
-
           <td>
             <button onclick="del(${d.row})">X</button>
           </td>
@@ -173,7 +202,7 @@ function load(){
     });
 }
 
-/* ================= POST SHEET ================= */
+/* ================= POST ================= */
 function post(data){
   return fetch(SHEET_API,{
     method:"POST",
@@ -183,7 +212,7 @@ function post(data){
 
 /* ================= ADD ================= */
 function add(){
-  if(!link.value) return alert("Chưa có link ảnh");
+  if(!link.value) return alert("Chưa upload ảnh");
 
   post({
     action:"add",
@@ -191,15 +220,16 @@ function add(){
     name: name1.value,
     note: note.value
   }).then(()=>{
-    link.value="";
     name1.value="";
     note.value="";
     preview.style.display="none";
+    imageInput.value="";
+    link.value="";
     load();
   });
 }
 
-/* ================= INLINE SAVE ================= */
+/* ================= SAVE ================= */
 function save(e,row,col,el){
   if(e.key==="Enter"){
     e.preventDefault();
@@ -226,8 +256,8 @@ function uploadImage(){
   if(!file) return alert("Chọn ảnh trước");
 
   status.textContent="Đang upload...";
-  const reader = new FileReader();
 
+  const reader = new FileReader();
   reader.onload=()=>{
     const base64 = reader.result.split(",")[1];
     const fd = new FormData();
@@ -250,7 +280,6 @@ function uploadImage(){
       }
     });
   };
-
   reader.readAsDataURL(file);
 }
 
