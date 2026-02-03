@@ -1,73 +1,165 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<title>Drive Image Gallery</title>
-<style>
-  body { font-family: Arial; padding: 20px }
-  img {
-    max-width: 200px;
-    max-height: 200px;
-    margin: 8px;
-    border: 1px solid #ccc;
-    object-fit: contain;
-  }
-  #gallery { display: flex; flex-wrap: wrap }
-</style>
+  <meta charset="UTF-8">
+  <title>Upload & Gallery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .box {
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,.1);
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 8px 15px;
+      border: none;
+      background: #1976d2;
+      color: #fff;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #125ca1;
+    }
+
+    #msg {
+      margin-top: 10px;
+      font-weight: bold;
+      color: green;
+    }
+
+    #gallery {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    #gallery img {
+      width: 200px;
+      height: auto;
+      margin: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 6px rgba(0,0,0,.3);
+      background: #fff;
+    }
+
+    .loading {
+      color: #888;
+    }
+  </style>
 </head>
 <body>
 
-<h2>Upload hình</h2>
-<input type="file" id="fileInput" accept="image/*">
-<button onclick="uploadImage()">Upload</button>
+<div class="box">
+  <h2>📤 Upload hình ảnh</h2>
+  <input type="file" id="file" accept="image/*">
+  <br><br>
+  <button onclick="uploadImage()">Upload</button>
+  <div id="msg"></div>
+</div>
 
-<hr>
-<h3>Gallery</h3>
-<div id="gallery"></div>
+<div class="box">
+  <h2>🖼 Danh sách hình ảnh</h2>
+  <div id="gallery" class="loading">Đang tải ảnh...</div>
+</div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbwRIoBUGz-YXqELhvh1I8sx9uUDXbUprpKHAaypWH3mWG18Te4gemlYmnSEht8JCA8i/exec";
+/* ==================================================
+   🔴 DÁN LINK WEB APP CỦA GOOGLE SHEET 2 VÀO ĐÂY
+   ================================================== */
+const API_URL = "https://script.google.com/macros/s/AKfycbzGGqOzxg5ycsY_0ucg2_Zaggz5CA1smuIpHJ7VOD29T74q6queWrY12tcyfTExxO1V/exec";
 
+/* ==================================================
+   UPLOAD IMAGE
+   ================================================== */
 function uploadImage() {
+  const fileInput = document.getElementById("file");
   const file = fileInput.files[0];
-  if (!file) return alert("Chưa chọn hình");
+
+  if (!file) {
+    alert("Vui lòng chọn hình!");
+    return;
+  }
 
   const reader = new FileReader();
-  reader.onload = async () => {
-    const base64 = reader.result.split(",")[1];
 
-    const res = await fetch(API_URL, {
+  reader.onload = function () {
+    const formData = new URLSearchParams();
+    formData.append("action", "upload");
+    formData.append("filename", file.name);
+    formData.append("base64", reader.result);
+
+    fetch(API_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: JSON.stringify({
-        name: file.name,
-        type: file.type,
-        base64: base64
-      })
+      body: formData.toString()
+    })
+    .then(res => res.text())
+    .then(() => {
+      document.getElementById("msg").innerText = "✅ Upload thành công!";
+      fileInput.value = "";
+      loadImages();
+    })
+    .catch(err => {
+      alert("Upload lỗi!");
+      console.error(err);
     });
-
-    const json = await res.json();
-    if (json.success) loadImages();
-    else alert("Upload lỗi");
   };
+
   reader.readAsDataURL(file);
 }
 
-async function loadImages() {
-  const res = await fetch(API_URL);
-  const links = await res.json();
+/* ==================================================
+   LOAD IMAGE LIST
+   ================================================== */
+function loadImages() {
+  const gallery = document.getElementById("gallery");
+  gallery.innerHTML = "Đang tải ảnh...";
 
-  gallery.innerHTML = "";
-  links.forEach(link => {
-    const img = document.createElement("img");
-    img.src = link;
-    gallery.appendChild(img);
-  });
+  fetch(API_URL + "?action=list")
+    .then(res => res.json())
+    .then(list => {
+      gallery.innerHTML = "";
+
+      if (list.length === 0) {
+        gallery.innerHTML = "<i>Chưa có hình nào</i>";
+        return;
+      }
+
+      list.forEach(url => {
+        const img = document.createElement("img");
+        img.src = url;
+        img.loading = "lazy";
+        gallery.appendChild(img);
+      });
+    })
+    .catch(err => {
+      gallery.innerHTML = "❌ Không load được ảnh";
+      console.error(err);
+    });
 }
 
+/* ==================================================
+   AUTO LOAD WHEN OPEN PAGE
+   ================================================== */
 loadImages();
 </script>
+
 </body>
 </html>
