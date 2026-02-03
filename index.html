@@ -1,101 +1,91 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>ImgBB + Google Sheet Gallery</title>
+<meta charset="utf-8">
+<title>CRUD Google Sheet</title>
 <style>
-body{font-family:sans-serif;max-width:800px;margin:auto;padding:20px}
-input,textarea,button{width:100%;margin:6px 0;padding:6px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-.card{text-align:center;border:1px solid #ccc;padding:6px;border-radius:6px}
-.card img{max-width:100%;cursor:pointer}
-.name{color:blue;cursor:pointer;text-decoration:underline}
-#popup{position:fixed;top:0;left:0;width:100%;height:100%;background:#0008;display:none}
-#popup .box{background:#fff;padding:20px;margin:10% auto;max-width:400px}
+body{font-family:sans-serif;max-width:600px;margin:auto}
+input,textarea,button{width:100%;margin:5px 0}
+table{width:100%;border-collapse:collapse}
+td,th{border:1px solid #ccc;padding:5px;text-align:left}
+button{cursor:pointer}
 </style>
 </head>
-
 <body>
 
-<h2>Upload ảnh</h2>
+<h2>CRUD Google Sheet</h2>
 
-<input type="text" id="name" placeholder="Tên">
+<input id="name" placeholder="Tên">
 <textarea id="note" placeholder="Chú thích"></textarea>
-<input type="file" id="imageInput" accept="image/*">
-<button onclick="uploadImage()">Upload</button>
+<button onclick="add()">Thêm</button>
 
 <hr>
-<h2>Gallery</h2>
-<div id="gallery" class="grid"></div>
 
-<div id="popup" onclick="this.style.display='none'">
-  <div class="box" onclick="event.stopPropagation()">
-    <h3 id="pname"></h3>
-    <p id="pnote"></p>
-  </div>
-</div>
+<table>
+<thead>
+<tr><th>Name</th><th>Note</th><th>Action</th></tr>
+</thead>
+<tbody id="list"></tbody>
+</table>
 
 <script>
-const IMGBB_KEY = "98bce19081883f35f02cec232ce565b5";
-const SHEET_API = "https://script.google.com/macros/s/AKfycbzKf8sIcOdt3fkU_31VP8Ik1E5s9VkvmUZKb7l-6JzfunfxDqotuXbM1FKKCqS2RNo/exec";
+const API = "https://script.google.com/macros/s/AKfycbyvlUGgSsi4L8tnjdGG4EzgCBtlqBp_vfR6ckDzn6bJ1nARIf55F4DXfRz5_QV74zM/exec";
 
-// ================= LOAD GALLERY =================
-function loadGallery(){
-  fetch(SHEET_API)
+function load(){
+  fetch(API)
     .then(r=>r.json())
     .then(data=>{
-      const g=document.getElementById("gallery");
-      g.innerHTML="";
-      data.reverse().forEach(i=>{
-        const div=document.createElement("div");
-        div.className="card";
-        div.innerHTML=`
-          <img src="${i.image}">
-          <div class="name" onclick="showNote('${i.name}','${i.note}')">${i.name}</div>
-        `;
-        g.appendChild(div);
+      const tb=document.getElementById("list");
+      tb.innerHTML="";
+      data.forEach(i=>{
+        tb.innerHTML+=`
+          <tr>
+            <td>${i.name}</td>
+            <td>${i.note}</td>
+            <td>
+              <button onclick="edit('${i.id}','${i.name}','${i.note}')">Edit</button>
+              <button onclick="del('${i.id}')">X</button>
+            </td>
+          </tr>`;
       });
     });
 }
 
-// ================= POPUP =================
-function showNote(name,note){
-  document.getElementById("pname").textContent=name;
-  document.getElementById("pnote").textContent=note;
-  document.getElementById("popup").style.display="block";
+function post(data){
+  return fetch(API,{
+    method:"POST",
+    body:JSON.stringify(data)
+  });
 }
 
-// ================= UPLOAD =================
-function uploadImage(){
-  const file=document.getElementById("imageInput").files[0];
-  const name=document.getElementById("name").value;
-  const note=document.getElementById("note").value;
-  if(!file||!name) return alert("Thiếu dữ liệu");
-
-  const reader=new FileReader();
-  reader.onload=()=>{
-    const b64=reader.result.split(",")[1];
-    const fd=new FormData();
-    fd.append("key",IMGBB_KEY);
-    fd.append("image",b64);
-
-    fetch("https://api.imgbb.com/1/upload",{method:"POST",body:fd})
-      .then(r=>r.json())
-      .then(res=>{
-        const image=res.data.url;
-        fetch(SHEET_API,{
-          method:"POST",
-          body:JSON.stringify({image,name,note})
-        }).then(()=>{
-          document.getElementById("imageInput").value="";
-          loadGallery();
-        });
-      });
-  };
-  reader.readAsDataURL(file);
+function add(){
+  post({
+    action:"add",
+    name:name.value,
+    note:note.value
+  }).then(load);
 }
 
-loadGallery();
+function edit(id,noteName,noteText){
+  name.value = noteName;
+  note.value = noteText;
+  if(confirm("Lưu chỉnh sửa?")){
+    post({
+      action:"edit",
+      id:id,
+      name:name.value,
+      note:note.value
+    }).then(load);
+  }
+}
+
+function del(id){
+  if(confirm("Xóa dòng này?")){
+    post({action:"delete",id:id}).then(load);
+  }
+}
+
+load();
 </script>
 
 </body>
