@@ -1,105 +1,70 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Google Drive Image Upload</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    button {
-      padding: 6px 12px;
-      margin-left: 5px;
-    }
-    img {
-      max-width: 200px;
-      max-height: 200px;
-      margin: 8px;
-      border: 1px solid #ccc;
-      object-fit: contain;
-    }
-    #gallery {
-      display: flex;
-      flex-wrap: wrap;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Drive Image Gallery</title>
+<style>
+  body { font-family: Arial; padding: 20px }
+  img {
+    max-width: 200px;
+    max-height: 200px;
+    margin: 8px;
+    border: 1px solid #ccc;
+    object-fit: contain;
+  }
+  #gallery { display: flex; flex-wrap: wrap }
+</style>
 </head>
 <body>
 
-<h2>Upload hình lên Google Drive</h2>
-
+<h2>Upload hình</h2>
 <input type="file" id="fileInput" accept="image/*">
 <button onclick="uploadImage()">Upload</button>
 
 <hr>
-
-<h3>Danh sách hình</h3>
+<h3>Gallery</h3>
 <div id="gallery"></div>
 
 <script>
-  // 🔴 DÁN LINK APPS SCRIPT WEB APP VÀO ĐÂY
-  const API_URL = "https://script.google.com/macros/s/AKfycbyXxEzdwMNRoxj18ZbDDdq22cDKQ41hptuLiiqgIhjQipRBnSnrWLvJNOeIVv5CQs0/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyXxEzdwMNRoxj18ZbDDdq22cDKQ41hptuLiiqgIhjQipRBnSnrWLvJNOeIVv5CQs0/exec";
 
-  function uploadImage() {
-    const fileInput = document.getElementById("fileInput");
-    const file = fileInput.files[0];
+function uploadImage() {
+  const file = fileInput.files[0];
+  if (!file) return alert("Chưa chọn hình");
 
-    if (!file) {
-      alert("Chưa chọn hình");
-      return;
-    }
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const base64 = reader.result.split(",")[1];
 
-    const reader = new FileReader();
-    reader.onload = async function () {
-      const base64 = reader.result.split(",")[1];
+    const res = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        name: file.name,
+        type: file.type,
+        base64
+      })
+    });
 
-      try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({
-            name: file.name,
-            type: file.type,
-            base64: base64
-          })
-        });
+    const json = await res.json();
+    if (json.success) loadImages();
+    else alert("Upload lỗi");
+  };
+  reader.readAsDataURL(file);
+}
 
-        const json = await res.json();
-        if (json.success) {
-          fileInput.value = "";
-          loadImages();
-        } else {
-          alert("Upload lỗi");
-        }
-      } catch (e) {
-        alert("Không kết nối được server");
-      }
-    };
+async function loadImages() {
+  const res = await fetch(API_URL);
+  const links = await res.json();
 
-    reader.readAsDataURL(file);
-  }
+  gallery.innerHTML = "";
+  links.forEach(link => {
+    const img = document.createElement("img");
+    img.src = link;
+    gallery.appendChild(img);
+  });
+}
 
-  async function loadImages() {
-    try {
-      const res = await fetch(API_URL);
-      const links = await res.json();
-
-      const gallery = document.getElementById("gallery");
-      gallery.innerHTML = "";
-
-      links.forEach(link => {
-        const img = document.createElement("img");
-        img.src = link;
-        gallery.appendChild(img);
-      });
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  // Load ảnh khi mở trang
-  loadImages();
+loadImages();
 </script>
-
 </body>
 </html>
