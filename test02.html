@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Google Sheet CRUD + ImgBB (Card)</title>
+<title>Google Sheet CRUD + ImgBB</title>
 
 <style>
 *{box-sizing:border-box}
@@ -11,8 +11,8 @@
 html,body{
   height:100%;
   margin:0;
+  overflow:hidden;
   font-family:sans-serif;
-  background:#f4f6fb;
 }
 
 /* ===== APP ===== */
@@ -69,25 +69,29 @@ img.preview{
   .form-row{grid-template-columns:1fr}
 }
 
-/* ===== GRID CARD ===== */
-.grid{
+/* ===== CARD LIST (CUỘN DỌC) ===== */
+.card-panel{
   flex:1;
+  overflow-y:auto;
+  background:#fff;
+}
+
+.grid{
   display:grid;
   grid-template-columns:repeat(8,1fr);
   gap:10px;
   padding:10px;
-  overflow:auto;
 }
 @media(max-width:1200px){.grid{grid-template-columns:repeat(4,1fr);}}
 @media(max-width:768px){.grid{grid-template-columns:repeat(2,1fr);}}
 
 /* ===== CARD ===== */
 .card{
-  background:#fff;
   border:1px solid #ddd;
   border-radius:6px;
   overflow:hidden;
   cursor:pointer;
+  background:#fff;
 }
 .card img{
   width:100%;
@@ -137,9 +141,7 @@ img.preview{
   display:flex;
   gap:6px;
 }
-.popup button{
-  flex:1;
-}
+.popup button{flex:1}
 
 /* ===== IMAGE AREA ===== */
 .popup-image{
@@ -150,8 +152,9 @@ img.preview{
   justify-content:center;
 }
 .popup-image img{
+  height:100%;          /* ⭐ ÉP THEO CHIỀU CAO */
+  width:auto;
   max-width:100%;
-  max-height:100%;
   object-fit:contain;
 }
 </style>
@@ -187,12 +190,14 @@ img.preview{
   </div>
 </div>
 
-<!-- ===== CARD LIST ===== -->
-<div class="grid" id="list"></div>
+<!-- ===== CARD SCROLL AREA ===== -->
+<div class="card-panel">
+  <div class="grid" id="list"></div>
+</div>
 
 </div>
 
-<!-- ===== POPUP EDIT ===== -->
+<!-- ===== POPUP ===== -->
 <div class="overlay" id="overlay">
   <div class="popup">
     <div class="popup-form">
@@ -211,11 +216,9 @@ img.preview{
 </div>
 
 <script>
-/* ===== CONFIG ===== */
 const SHEET_API="https://script.google.com/macros/s/AKfycbymlIeO7SqDLqE_3HHGbhYyPlKiT1mlBSR58njBzUWHUGAbOQYdMnSvX7CeL0OkX48/exec";
 const IMGBB_KEY="98bce19081883f35f02cec232ce565b5";
 
-/* ===== DOM ===== */
 const list=document.getElementById("list");
 const overlay=document.getElementById("overlay");
 const editName=document.getElementById("editName");
@@ -233,10 +236,8 @@ const topContent=document.getElementById("topContent");
 
 let currentRow=0;
 
-/* ===== TOGGLE ===== */
 function toggleTop(){topContent.classList.toggle("hide");}
 
-/* ===== PREVIEW ===== */
 function previewLocal(i){
   const f=i.files[0];
   if(!f) return;
@@ -244,7 +245,6 @@ function previewLocal(i){
   preview.style.display="block";
 }
 
-/* ===== LOAD ===== */
 function load(){
   fetch(SHEET_API).then(r=>r.json()).then(data=>{
     list.innerHTML="";
@@ -261,7 +261,6 @@ function load(){
   });
 }
 
-/* ===== OPEN EDIT ===== */
 function openEdit(d){
   currentRow=d.row;
   editName.value=d.name;
@@ -273,12 +272,10 @@ function openEdit(d){
 }
 function closeEdit(){overlay.style.display="none";}
 
-/* ===== POST ===== */
 function post(d){
   return fetch(SHEET_API,{method:"POST",body:JSON.stringify(d)});
 }
 
-/* ===== SAVE EDIT ===== */
 function saveEdit(){
   const note=editNote1.value+"\n"+editNote2.value;
   Promise.all([
@@ -290,7 +287,6 @@ function saveEdit(){
   });
 }
 
-/* ===== ADD ===== */
 function add(){
   if(!link.value) return alert("Upload ảnh trước");
   post({
@@ -308,7 +304,6 @@ function add(){
   });
 }
 
-/* ===== UPLOAD IMG ===== */
 function uploadImage(){
   const f=imageInput.files[0];
   if(!f) return alert("Chọn ảnh");
