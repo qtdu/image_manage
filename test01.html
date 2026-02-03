@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Google Sheet CRUD + ImgBB</title>
+<title>Sheet CRUD + ImgBB</title>
 
 <style>
 *{box-sizing:border-box}
@@ -22,7 +22,7 @@ html,body{
   flex-direction:column;
 }
 
-/* ===== TOP PANEL ===== */
+/* ===== TOP ===== */
 .top-panel{
   background:#f3f6fb;
   border-bottom:2px solid #d0d7e2;
@@ -30,36 +30,15 @@ html,body{
 }
 
 .top-title{
-  cursor:pointer;
-  user-select:none;
   background:#2d6cdf;
   color:#fff;
   padding:8px 12px;
   border-radius:4px;
-}
-
-.top-content{
-  margin-top:10px;
-}
-
-/* ===== ROW ===== */
-.header-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-}
-
-/* ===== INPUT / BUTTON ===== */
-input,button{
-  padding:8px;
-  font-size:14px;
-}
-
-button{
   cursor:pointer;
-  white-space:nowrap;
+  user-select:none;
 }
+
+.top-content{margin-top:10px}
 
 /* ===== UPLOAD ===== */
 .upload-row{
@@ -69,9 +48,15 @@ button{
   flex-wrap:nowrap;
 }
 
-.upload-row input[type="file"]{
+.upload-row input[type=file]{
   flex:1;
   min-width:0;
+}
+
+button{
+  padding:8px 10px;
+  cursor:pointer;
+  white-space:nowrap;
 }
 
 img.preview{
@@ -82,7 +67,21 @@ img.preview{
   display:none;
 }
 
+/* ===== STATUS ===== */
+#status{
+  margin-top:6px;
+  font-size:14px;
+  font-weight:bold;
+}
+
 /* ===== FORM ===== */
+.header-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:8px;
+}
+
 .form-row{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -90,7 +89,18 @@ img.preview{
   margin-top:6px;
 }
 
-/* ===== TABLE PANEL ===== */
+input,textarea{
+  padding:8px;
+  font-size:14px;
+}
+
+textarea{
+  min-height:60px;        /* >= 2 dòng */
+  resize:vertical;
+  overflow:auto;          /* cuộn dọc + ngang */
+}
+
+/* ===== TABLE ===== */
 .table-panel{
   flex:1;
   display:flex;
@@ -98,7 +108,6 @@ img.preview{
   overflow:hidden;
 }
 
-/* ===== TABLE HEADER ===== */
 .table-header{
   background:#1f4fbf;
   color:#fff;
@@ -112,17 +121,15 @@ img.preview{
   max-width:240px;
 }
 
-/* ===== TABLE ===== */
 .table-wrap{
   flex:1;
   overflow:auto;
-  background:#fff;
 }
 
 table{
   width:100%;
-  border-collapse:collapse;
   min-width:650px;
+  border-collapse:collapse;
 }
 
 thead th{
@@ -138,10 +145,19 @@ th,td{
   padding:6px;
 }
 
-td[contenteditable]{background:#f9f9f9}
-td:focus{outline:2px solid #4caf50}
+td[contenteditable]{
+  background:#f9f9f9;
+  max-width:260px;
+  overflow:auto;
+}
 
-img.thumb{max-width:80px}
+td:focus{
+  outline:2px solid #4caf50;
+}
+
+img.thumb{
+  max-width:80px;
+}
 
 /* ===== MOBILE ===== */
 @media(max-width:768px){
@@ -154,11 +170,9 @@ img.thumb{max-width:80px}
 
 <div class="app">
 
-  <!-- ===== TOP ===== -->
+  <!-- ===== TOP PANEL ===== -->
   <div class="top-panel">
-    <div class="top-title" onclick="toggleTop()">
-      📤 Upload ảnh (ImgBB)
-    </div>
+    <div class="top-title" onclick="toggleTop()">📤 Upload ảnh (ImgBB)</div>
 
     <div class="top-content" id="topContent">
 
@@ -173,7 +187,7 @@ img.thumb{max-width:80px}
       <hr>
 
       <div class="header-row">
-        <h3>➕ Thêm dữ liệu</h3>
+        <b>➕ Thêm dữ liệu</b>
         <button onclick="add()">Thêm</button>
       </div>
 
@@ -181,7 +195,7 @@ img.thumb{max-width:80px}
 
       <div class="form-row">
         <input id="name1" placeholder="Name">
-        <input id="note" placeholder="Note">
+        <textarea id="note" placeholder="Note (ít nhất 2 dòng)"></textarea>
       </div>
 
     </div>
@@ -221,24 +235,68 @@ img.thumb{max-width:80px}
 const SHEET_API="https://script.google.com/macros/s/AKfycbymlIeO7SqDLqE_3HHGbhYyPlKiT1mlBSR58njBzUWHUGAbOQYdMnSvX7CeL0OkX48/exec";
 const IMGBB_KEY="98bce19081883f35f02cec232ce565b5";
 
+/* ===== UI ===== */
 function toggleTop(){
-  const t=topContent;
-  t.style.display=t.style.display==="none"?"block":"none";
+  topContent.style.display =
+    topContent.style.display==="none" ? "block" : "none";
 }
+function hideTop(){topContent.style.display="none"}
+function showTop(){topContent.style.display="block"}
 
-function hideTop(){
-  topContent.style.display="none";
-}
-
-function showTop(){
-  topContent.style.display="block";
-}
-
+/* ===== IMAGE ===== */
 function previewLocal(i){
   const f=i.files[0];
   if(!f) return;
   preview.src=URL.createObjectURL(f);
   preview.style.display="block";
+}
+
+function uploadImage(){
+  const f=imageInput.files[0];
+  if(!f) return alert("Chọn ảnh trước");
+  status.textContent="⏳ Đang upload ảnh...";
+  status.style.color="#333";
+
+  const r=new FileReader();
+  r.onload=()=>{
+    const fd=new FormData();
+    fd.append("key",IMGBB_KEY);
+    fd.append("image",r.result.split(",")[1]);
+    fetch("https://api.imgbb.com/1/upload",{method:"POST",body:fd})
+      .then(r=>r.json())
+      .then(res=>{
+        if(res.success){
+          link.value=res.data.url;
+          preview.src=res.data.url;
+          preview.style.display="block";
+          status.textContent="✔ Upload xong – vui lòng nhập Name và Note";
+          status.style.color="green";
+        }
+      });
+  };
+  r.readAsDataURL(f);
+}
+
+/* ===== DATA ===== */
+function post(d){
+  return fetch(SHEET_API,{method:"POST",body:JSON.stringify(d)});
+}
+
+function add(){
+  if(!link.value) return alert("Chưa upload ảnh");
+  post({
+    action:"add",
+    link:link.value,
+    name:name1.value,
+    note:note.value
+  }).then(()=>{
+    name1.value=note.value="";
+    imageInput.value="";
+    preview.style.display="none";
+    link.value="";
+    status.textContent="";
+    load();
+  });
 }
 
 function load(){
@@ -256,29 +314,6 @@ function load(){
   });
 }
 
-function filterTable(){
-  const k=searchName.value.toLowerCase();
-  document.querySelectorAll("#list tr").forEach(tr=>{
-    const t=tr.querySelector(".col-name").textContent.toLowerCase();
-    tr.style.display=t.includes(k)?"":"none";
-  });
-}
-
-function post(d){
-  return fetch(SHEET_API,{method:"POST",body:JSON.stringify(d)});
-}
-
-function add(){
-  if(!link.value) return alert("Chưa upload ảnh");
-  post({action:"add",link:link.value,name:name1.value,note:note.value}).then(()=>{
-    name1.value=note.value="";
-    imageInput.value="";
-    preview.style.display="none";
-    link.value="";
-    load();
-  });
-}
-
 function save(e,r,c,el){
   if(e.key==="Enter"){
     e.preventDefault();
@@ -291,27 +326,12 @@ function del(r){
   if(confirm("Xóa dòng này?")) post({action:"delete",row:r}).then(load);
 }
 
-function uploadImage(){
-  const f=imageInput.files[0];
-  if(!f) return alert("Chọn ảnh");
-  status.textContent="Đang upload...";
-  const rd=new FileReader();
-  rd.onload=()=>{
-    const fd=new FormData();
-    fd.append("key",IMGBB_KEY);
-    fd.append("image",rd.result.split(",")[1]);
-    fetch("https://api.imgbb.com/1/upload",{method:"POST",body:fd})
-      .then(r=>r.json())
-      .then(res=>{
-        if(res.success){
-          link.value=res.data.url;
-          preview.src=res.data.url;
-          preview.style.display="block";
-          status.textContent="Upload xong ✔";
-        }
-      });
-  };
-  rd.readAsDataURL(f);
+function filterTable(){
+  const k=searchName.value.toLowerCase();
+  document.querySelectorAll("#list tr").forEach(tr=>{
+    const t=tr.querySelector(".col-name").textContent.toLowerCase();
+    tr.style.display=t.includes(k)?"":"none";
+  });
 }
 
 load();
