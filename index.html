@@ -2,53 +2,57 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>CRUD Google Sheet</title>
+<title>Google Sheet CRUD Inline</title>
 <style>
-body{font-family:sans-serif;max-width:600px;margin:auto}
-input,textarea,button{width:100%;margin:5px 0}
+body{font-family:sans-serif;max-width:900px;margin:auto}
+input,button{margin:4px;padding:4px}
 table{width:100%;border-collapse:collapse}
-td,th{border:1px solid #ccc;padding:5px;text-align:left}
-button{cursor:pointer}
+td,th{border:1px solid #ccc;padding:6px}
+td[contenteditable]{background:#f9f9f9}
+td:focus{outline:2px solid #4caf50}
 </style>
 </head>
 <body>
 
-<h2>CRUD Google Sheet</h2>
-
+<h3>Thêm dữ liệu</h3>
+<input id="link" placeholder="Link hình">
 <input id="name" placeholder="Tên">
-<textarea id="note" placeholder="Chú thích"></textarea>
+<input id="note" placeholder="Chú thích">
 <button onclick="add()">Thêm</button>
 
 <hr>
 
 <table>
 <thead>
-<tr><th>Name</th><th>Note</th><th>Action</th></tr>
+<tr>
+  <th>Time</th>
+  <th>Link</th>
+  <th>Name</th>
+  <th>Note</th>
+  <th>X</th>
+</tr>
 </thead>
 <tbody id="list"></tbody>
 </table>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbyvlUGgSsi4L8tnjdGG4EzgCBtlqBp_vfR6ckDzn6bJ1nARIf55F4DXfRz5_QV74zM/exec";
+const API = "https://script.google.com/macros/s/AKfycbwf754kAsopqGGJtCoytFNvG9a_WjD6Q0IZIjLrRXhvn8orbnqcwNW8H84eOuJAXPQ/exec";
 
 function load(){
-  fetch(API)
-    .then(r=>r.json())
-    .then(data=>{
-      const tb=document.getElementById("list");
-      tb.innerHTML="";
-      data.forEach(i=>{
-        tb.innerHTML+=`
-          <tr>
-            <td>${i.name}</td>
-            <td>${i.note}</td>
-            <td>
-              <button onclick="edit('${i.id}','${i.name}','${i.note}')">Edit</button>
-              <button onclick="del('${i.id}')">X</button>
-            </td>
-          </tr>`;
-      });
+  fetch(API).then(r=>r.json()).then(data=>{
+    const tb = document.getElementById("list");
+    tb.innerHTML = "";
+    data.reverse().forEach(d=>{
+      tb.innerHTML += `
+      <tr>
+        <td>${d.time}</td>
+        <td contenteditable onkeydown="save(event,${d.row},2,this)">${d.link}</td>
+        <td contenteditable onkeydown="save(event,${d.row},3,this)">${d.name}</td>
+        <td contenteditable onkeydown="save(event,${d.row},4,this)">${d.note}</td>
+        <td><button onclick="del(${d.row})">X</button></td>
+      </tr>`;
     });
+  });
 }
 
 function post(data){
@@ -61,27 +65,31 @@ function post(data){
 function add(){
   post({
     action:"add",
+    link:link.value,
     name:name.value,
     note:note.value
-  }).then(load);
+  }).then(()=>{
+    link.value=name.value=note.value="";
+    load();
+  });
 }
 
-function edit(id,noteName,noteText){
-  name.value = noteName;
-  note.value = noteText;
-  if(confirm("Lưu chỉnh sửa?")){
+function save(e,row,col,el){
+  if(e.key==="Enter"){
+    e.preventDefault();
     post({
-      action:"edit",
-      id:id,
-      name:name.value,
-      note:note.value
-    }).then(load);
+      action:"update",
+      row:row,
+      col:col,
+      value:el.textContent
+    });
+    el.blur();
   }
 }
 
-function del(id){
+function del(row){
   if(confirm("Xóa dòng này?")){
-    post({action:"delete",id:id}).then(load);
+    post({action:"delete",row:row}).then(load);
   }
 }
 
