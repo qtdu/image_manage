@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sheet + ImgBB Card</title>
+
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;font-family:sans-serif}
+
+/* ===== APP ===== */
+.app{height:100%;display:flex;flex-direction:column}
+
+/* ===== TOP ===== */
+.top-panel{background:#f3f6fb;border-bottom:2px solid #cfd6e4;padding:10px}
+.top-title{background:#2d6cdf;color:#fff;padding:8px 12px;border-radius:4px;cursor:pointer}
+.top-content{margin-top:10px;transition:.25s;max-height:520px}
+.top-content.hide{max-height:0;opacity:0;overflow:hidden}
+
+/* ===== INPUT ===== */
+input,textarea,button{padding:8px;font-size:14px}
+textarea{resize:vertical;min-height:88px;max-height:160px}
+
+/* ===== UPLOAD ===== */
+.upload-wrap{margin-bottom:6px}
+
+.upload-row{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.upload-row input[type=file]{flex:1;min-width:0}
+
+.preview{
+  width:48px;
+  height:48px;
+  object-fit:cover;
+  border:1px solid #ccc;
+  display:none;
+}
+
+/* ⭐ STATUS CHIẾM 1 HÀNG RIÊNG */
+.upload-status{
+  margin-top:4px;
+  min-height:18px;
+  font-size:13px;
+}
+
+/* ===== FORM ===== */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+@media(max-width:768px){.form-row{grid-template-columns:1fr}}
+
+/* ===== LIST PANEL ===== */
+.list-panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.list-header{background:#1f4fbf;color:#fff;padding:8px 12px}
+
+/* ===== GRID ===== */
+.grid-wrap{flex:1;overflow:auto;padding:10px;background:#fff}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  gap:10px;
+}
+@media(max-width:1200px){.grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:768px){.grid{grid-template-columns:repeat(2,1fr)}}
+
+.card{
+  border:1px solid #ddd;
+  border-radius:6px;
+  overflow:hidden;
+  cursor:pointer;
+  background:#fff;
+}
+.card img{
+  width:100%;
+  height:120px;
+  object-fit:cover;
+}
+.card .name{
+  padding:6px;
+  text-align:center;
+  font-weight:bold;
+  font-size:14px;
+}
+
+/* ===== POPUP ===== */
+.overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+}
+.popup{
+  background:#fff;
+  width:90%;
+  max-width:420px;
+  height:90%;
+  display:flex;
+  flex-direction:column;
+  padding:10px;
+  border-radius:6px;
+}
+.popup input,.popup textarea{margin-bottom:6px}
+.popup .img-box{
+  flex:1;
+  border:1px solid #ccc;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+.popup .img-box img{
+  max-height:100%;
+  max-width:100%;
+  object-fit:contain;
+}
+.popup .btns{
+  display:flex;
+  gap:8px;
+  margin-top:6px;
+  justify-content:center; /* ⭐ CANH GIỮA 3 NÚT */
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<!-- ===== TOP ===== -->
+<div class="top-panel">
+  <div class="top-title" onclick="topContent.classList.toggle('hide')">📤 Upload ảnh</div>
+
+  <div class="top-content" id="topContent">
+
+    <div class="upload-wrap">
+      <div class="upload-row">
+        <input type="file" id="imageInput" accept="image/*" onchange="previewLocal(this)">
+        <button onclick="uploadImage()">Upload</button>
+        <img id="preview" class="preview">
+      </div>
+
+      <!-- ⭐ STATUS NẰM DƯỚI NÚT CHỌN TỆP -->
+      <div class="upload-status">
+        <span id="status"></span>
+      </div>
+    </div>
+
+    <input type="hidden" id="link">
+
+    <div class="form-row">
+      <input id="name1" placeholder="Name">
+      <textarea id="note" rows="4" placeholder="Note"></textarea>
+    </div>
+
+    <button onclick="add()">➕ Thêm</button>
+  </div>
+</div>
+
+<!-- ===== LIST ===== -->
+<div class="list-panel">
+  <div class="list-header">📋 Danh sách</div>
+  <div class="grid-wrap">
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+</div>
+
+<!-- ===== POPUP ===== -->
+<div class="overlay" id="overlay">
+  <div class="popup">
+    <input id="eName">
+    <textarea id="eNote" rows="4"></textarea>
+
+    <div class="img-box">
+      <img id="eImg">
+    </div>
+
+    <div class="btns">
+      <button onclick="saveEdit()">💾 Save</button>
+      <button onclick="closeEdit()">❌ Cancel</button>
+      <button onclick="del(curRow)">🗑</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHEET_API="https://script.google.com/macros/s/AKfycbymlIeO7SqDLqE_3HHGbhYyPlKiT1mlBSR58njBzUWHUGAbOQYdMnSvX7CeL0OkX48/exec";
+const IMGBB_KEY="98bce19081883f35f02cec232ce565b5";
+
+let curRow=0;
+
+function post(d){return fetch(SHEET_API,{method:"POST",body:JSON.stringify(d)})}
+
+function load(){
+  fetch(SHEET_API).then(r=>r.json()).then(data=>{
+    grid.innerHTML="";
+    data.reverse().forEach(d=>{
+      const c=document.createElement("div");
+      c.className="card";
+      c.innerHTML=`
+        <img src="${d.link}">
+        <div class="name">${d.name}</div>
+      `;
+      c.onclick=()=>openEdit(d);
+      grid.appendChild(c);
+    });
+  });
+}
+
+function openEdit(d){
+  curRow=d.row;
+  eName.value=d.name;
+  eNote.value=d.note;
+  eImg.src=d.link;
+  overlay.style.display="flex";
+}
+
+function closeEdit(){overlay.style.display="none"}
+
+function saveEdit(){
+  post({action:"update",row:curRow,col:3,value:eName.value});
+  post({action:"update",row:curRow,col:4,value:eNote.value})
+    .then(()=>{closeEdit();load()});
+}
+
+function del(r){
+  if(confirm("Xóa?")){
+    post({action:"delete",row:r}).then(()=>{closeEdit();load()});
+  }
+}
+
+/* ===== UPLOAD ===== */
+function previewLocal(i){
+  const f=i.files[0];
+  if(!f) return;
+  preview.src=URL.createObjectURL(f);
+  preview.style.display="block";
+}
+
+function uploadImage(){
+  const f=imageInput.files[0];
+  if(!f) return alert("Chọn ảnh");
+  status.textContent="⏳ Upload...";
+  status.style.color="#333";
+
+  const rd=new FileReader();
+  rd.onload=()=>{
+    const fd=new FormData();
+    fd.append("key",IMGBB_KEY);
+    fd.append("image",rd.result.split(",")[1]);
+    fetch("https://api.imgbb.com/1/upload",{method:"POST",body:fd})
+      .then(r=>r.json())
+      .then(res=>{
+        link.value=res.data.url;
+        preview.src=res.data.url;
+        preview.style.display="block";
+        status.textContent="✔ Upload xong";
+        status.style.color="green";
+      });
+  };
+  rd.readAsDataURL(f);
+}
+
+function add(){
+  if(!link.value) return alert("Upload ảnh trước");
+  post({action:"add",link:link.value,name:name1.value,note:note.value})
+    .then(()=>{
+      name1.value="";
+      note.value="";
+      preview.style.display="none";
+      link.value="";
+      status.textContent="";
+      load();
+    });
+}
+
+load();
+</script>
+</body>
+</html>
