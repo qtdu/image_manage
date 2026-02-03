@@ -6,7 +6,9 @@
 <title>Google Sheet CRUD + ImgBB</title>
 
 <style>
-*{box-sizing:border-box}
+*{
+  box-sizing:border-box;
+}
 
 body{
   font-family:sans-serif;
@@ -15,7 +17,7 @@ body{
   padding:12px;
 }
 
-/* ===== HEADER ROW ===== */
+/* ===== TIÊU ĐỀ + NÚT THÊM ===== */
 .header-row{
   display:flex;
   align-items:center;
@@ -24,37 +26,41 @@ body{
 }
 
 /* ===== INPUT / BUTTON ===== */
-input,button{
+input, button{
   padding:8px;
   font-size:14px;
 }
 
 button{
   cursor:pointer;
+  white-space:nowrap;
 }
 
 /* ===== UPLOAD ROW ===== */
 .upload-row{
   display:flex;
   align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
+  gap:8px;
+  flex-wrap:nowrap;           /* ❗ KHÔNG XUỐNG DÒNG */
 }
 
+/* file input chiếm phần còn lại */
 .upload-row input[type="file"]{
   flex:1;
+  min-width:0;               /* ❗ fix tràn mobile */
 }
 
-/* ===== PREVIEW THUMB ===== */
+/* ===== PREVIEW ẢNH NHỎ ===== */
 img.preview{
   width:60px;
   height:60px;
   object-fit:cover;
   border:1px solid #ccc;
   display:none;
+  flex-shrink:0;             /* ❗ không bị ép nhỏ */
 }
 
-/* ===== FORM ===== */
+/* ===== FORM INPUT ===== */
 .form-row{
   display:grid;
   grid-template-columns: 1fr 1fr;
@@ -73,9 +79,10 @@ table{
   min-width:650px;
 }
 
-th,td{
+th, td{
   border:1px solid #ccc;
   padding:6px;
+  text-align:left;
   vertical-align:top;
 }
 
@@ -92,17 +99,40 @@ img.thumb{
   display:block;
 }
 
-/* ===== MOBILE ===== */
+/* ================= MOBILE ================= */
 @media(max-width:768px){
+
+  .header-row{
+    flex-direction:row;
+  }
+
   .form-row{
     grid-template-columns:1fr;
   }
 
-  .header-row{
-    flex-direction:column;
-    align-items:flex-start;
+  table{
+    font-size:13px;
+  }
+
+  img.thumb{
+    max-width:80px;
   }
 }
+
+/* ===== MOBILE NHỎ (ĐIỆN THOẠI) ===== */
+@media(max-width:480px){
+
+  button{
+    padding:6px 8px;
+    font-size:13px;
+  }
+
+  img.preview{
+    width:44px;
+    height:44px;
+  }
+}
+
 </style>
 </head>
 
