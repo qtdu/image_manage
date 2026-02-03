@@ -81,7 +81,7 @@
 /* ==================================================
    🔴 DÁN LINK WEB APP CỦA GOOGLE SHEET 2 VÀO ĐÂY
    ================================================== */
-const API_URL = "https://script.google.com/macros/s/AKfycbxG38zsfWLDNZaV_tSDdFmsVQXXchRuKRbYN35D88shb3nLfgDT4urOmRvLE7rEnUEc/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwX-qebnRCnwYwwkHQD3P-5X4t-fRYJ7MPw2dkN-w2ffVwjnditek7XHPnS24qbQdlh/exec";
 
 /* ==================================================
    UPLOAD IMAGE
@@ -132,27 +132,42 @@ function loadImages() {
   const gallery = document.getElementById("gallery");
   gallery.innerHTML = "Đang tải ảnh...";
 
+
+  
   fetch(API_URL + "?action=list")
-    .then(res => res.json())
-    .then(list => {
-      gallery.innerHTML = "";
+  .then(res => res.text())
+  .then(txt => {
+    console.log("API RAW:", txt);
 
-      if (list.length === 0) {
-        gallery.innerHTML = "<i>Chưa có hình nào</i>";
-        return;
-      }
+    let list;
+    try {
+      list = JSON.parse(txt);
+    } catch (e) {
+      throw new Error("API không trả JSON");
+    }
 
-      list.forEach(url => {
-        const img = document.createElement("img");
-        img.src = url;
-        img.loading = "lazy";
-        gallery.appendChild(img);
-      });
-    })
-    .catch(err => {
-      gallery.innerHTML = "❌ Không load được ảnh";
-      console.error(err);
+    return list;
+  })
+  .then(list => {
+    gallery.innerHTML = "";
+
+    if (!Array.isArray(list) || list.length === 0) {
+      gallery.innerHTML = "<i>Chưa có hình nào</i>";
+      return;
+    }
+
+    list.forEach(url => {
+      const img = document.createElement("img");
+      img.src = url;
+      img.loading = "lazy";
+      gallery.appendChild(img);
     });
+  })
+  .catch(err => {
+    gallery.innerHTML = "❌ Không load được ảnh";
+    console.error("LOAD ERROR:", err);
+  });
+
 }
 
 /* ==================================================
