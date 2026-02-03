@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -7,14 +8,7 @@
 
 <style>
 *{box-sizing:border-box}
-
-/* ✅ FIX SCROLL */
-html,body{
-  height:100%;
-  margin:0;
-  overflow-y:auto;
-  font-family:sans-serif
-}
+html,body{height:100%;margin:0;overflow:hidden;font-family:sans-serif}
 
 /* ===== APP ===== */
 .app{height:100%;display:flex;flex-direction:column}
@@ -30,22 +24,9 @@ input,textarea,button{padding:8px;font-size:14px}
 textarea{resize:vertical;min-height:88px;max-height:160px}
 
 /* ===== UPLOAD ===== */
-.upload-row{
-  display:flex;
-  gap:8px;
-  align-items:center;
-  flex-wrap:wrap;   /* ✅ FIX BỊ CHE */
-}
-.upload-row input[type=file]{flex:1;min-width:200px}
-
-.preview{
-  width:48px;
-  height:48px;
-  object-fit:cover;
-  border:1px solid #ccc;
-  display:none;
-  margin-top:4px;
-}
+.upload-row{display:flex;gap:8px;align-items:center}
+.upload-row input[type=file]{flex:1}
+.preview{width:48px;height:48px;object-fit:cover;border:1px solid #ccc;display:none}
 
 /* ⭐ STATUS */
 #status{
@@ -60,7 +41,7 @@ textarea{resize:vertical;min-height:88px;max-height:160px}
 @media(max-width:768px){.form-row{grid-template-columns:1fr}}
 
 /* ===== LIST PANEL ===== */
-.list-panel{flex:1;display:flex;flex-direction:column}
+.list-panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .list-header{background:#1f4fbf;color:#fff;padding:8px 12px}
 
 /* ===== GRID ===== */
@@ -139,6 +120,7 @@ textarea{resize:vertical;min-height:88px;max-height:160px}
 <body>
 <div class="app">
 
+<!-- ===== TOP ===== -->
 <div class="top-panel">
   <div class="top-title" onclick="topContent.classList.toggle('hide')">📤 Upload ảnh</div>
 
@@ -162,6 +144,7 @@ textarea{resize:vertical;min-height:88px;max-height:160px}
   </div>
 </div>
 
+<!-- ===== LIST ===== -->
 <div class="list-panel">
   <div class="list-header">📋 Danh sách</div>
   <div class="grid-wrap">
@@ -193,7 +176,11 @@ textarea{resize:vertical;min-height:88px;max-height:160px}
 const SHEET_API="https://script.google.com/macros/s/AKfycbymlIeO7SqDLqE_3HHGbhYyPlKiT1mlBSR58njBzUWHUGAbOQYdMnSvX7CeL0OkX48/exec";
 const IMGBB_KEY="98bce19081883f35f02cec232ce565b5";
 
+
+const status = document.getElementById("status");
+
 let curRow=0;
+
 function post(d){return fetch(SHEET_API,{method:"POST",body:JSON.stringify(d)})}
 
 function load(){
@@ -202,7 +189,10 @@ function load(){
     data.reverse().forEach(d=>{
       const c=document.createElement("div");
       c.className="card";
-      c.innerHTML=`<img src="${d.link}"><div class="name">${d.name}</div>`;
+      c.innerHTML=`
+        <img src="${d.link}">
+        <div class="name">${d.name}</div>
+      `;
       c.onclick=()=>openEdit(d);
       grid.appendChild(c);
     });
@@ -216,18 +206,22 @@ function openEdit(d){
   eImg.src=d.link;
   overlay.style.display="flex";
 }
+
 function closeEdit(){overlay.style.display="none"}
+
 function saveEdit(){
   post({action:"update",row:curRow,col:3,value:eName.value});
   post({action:"update",row:curRow,col:4,value:eNote.value})
     .then(()=>{closeEdit();load()});
 }
+
 function del(r){
   if(confirm("Xóa?")){
     post({action:"delete",row:r}).then(()=>{closeEdit();load()});
   }
 }
 
+/* ===== UPLOAD ===== */
 function previewLocal(i){
   const f=i.files[0];
   if(!f) return;
