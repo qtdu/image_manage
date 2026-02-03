@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sheet + ImgBB Card View</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:sans-serif;
+  background:#f4f6fb;
+}
+
+/* ===== TOP ===== */
+.top{
+  padding:10px;
+  background:#2d6cdf;
+  color:#fff;
+}
+.top b{font-size:18px}
+
+/* ===== GRID ===== */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  gap:10px;
+  padding:10px;
+}
+
+@media(max-width:1200px){
+  .grid{grid-template-columns:repeat(4,1fr);}
+}
+@media(max-width:768px){
+  .grid{grid-template-columns:repeat(2,1fr);}
+}
+
+/* ===== CARD ===== */
+.card{
+  background:#fff;
+  border-radius:6px;
+  overflow:hidden;
+  border:1px solid #ddd;
+  cursor:pointer;
+  transition:.15s;
+}
+.card:hover{transform:scale(1.03)}
+
+.card img{
+  width:100%;
+  height:130px;
+  object-fit:cover;
+}
+
+.card .name{
+  padding:6px;
+  text-align:center;
+  font-weight:bold;
+  font-size:14px;
+}
+
+/* ===== OVERLAY ===== */
+.overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+}
+
+.popup{
+  background:#fff;
+  width:90%;
+  max-width:420px;
+  padding:12px;
+  border-radius:6px;
+}
+
+.popup input,
+.popup textarea{
+  width:100%;
+  margin-bottom:8px;
+  padding:6px;
+}
+
+.popup img{
+  width:100%;
+  margin-top:6px;
+}
+
+.popup .btns{
+  display:flex;
+  gap:8px;
+}
+.popup button{
+  flex:1;
+  padding:8px;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="top">
+  <b>📸 Danh sách hình ảnh</b>
+</div>
+
+<div class="grid" id="list"></div>
+
+<!-- ===== POPUP EDIT ===== -->
+<div class="overlay" id="overlay">
+  <div class="popup">
+    <input id="editName" placeholder="Name">
+    <textarea id="editNote1" rows="4" placeholder="Note dòng 1"></textarea>
+    <textarea id="editNote2" rows="4" placeholder="Note dòng 2"></textarea>
+    <img id="editImg">
+
+    <div class="btns">
+      <button onclick="saveEdit()">💾 Save</button>
+      <button onclick="closeEdit()">❌ Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== CONFIG ===== */
+const SHEET_API="https://script.google.com/macros/s/AKfycbymlIeO7SqDLqE_3HHGbhYyPlKiT1mlBSR58njBzUWHUGAbOQYdMnSvX7CeL0OkX48/exec";
+
+/* ===== DOM ===== */
+const list=document.getElementById("list");
+const overlay=document.getElementById("overlay");
+const editName=document.getElementById("editName");
+const editNote1=document.getElementById("editNote1");
+const editNote2=document.getElementById("editNote2");
+const editImg=document.getElementById("editImg");
+
+/* ===== STATE ===== */
+let currentRow=0;
+
+/* ===== LOAD ===== */
+function load(){
+  fetch(SHEET_API)
+    .then(r=>r.json())
+    .then(data=>{
+      list.innerHTML="";
+      data.reverse().forEach(d=>{
+        const card=document.createElement("div");
+        card.className="card";
+        card.innerHTML=`
+          <img src="${d.link}">
+          <div class="name">${d.name}</div>
+        `;
+        card.onclick=()=>openEdit(d);
+        list.appendChild(card);
+      });
+    });
+}
+
+/* ===== OPEN EDIT ===== */
+function openEdit(d){
+  currentRow=d.row;
+  editName.value=d.name;
+  const notes=(d.note||"").split("\n");
+  editNote1.value=notes[0]||"";
+  editNote2.value=notes.slice(1).join("\n");
+  editImg.src=d.link;
+  overlay.style.display="flex";
+}
+
+/* ===== CLOSE ===== */
+function closeEdit(){
+  overlay.style.display="none";
+}
+
+/* ===== POST ===== */
+function post(data){
+  return fetch(SHEET_API,{
+    method:"POST",
+    body:JSON.stringify(data)
+  });
+}
+
+/* ===== SAVE ===== */
+function saveEdit(){
+  const note=editNote1.value+"\n"+editNote2.value;
+
+  Promise.all([
+    post({action:"update",row:currentRow,col:3,value:editName.value}),
+    post({action:"update",row:currentRow,col:4,value:note})
+  ]).then(()=>{
+    closeEdit();
+    load();
+  });
+}
+
+load();
+</script>
+
+</body>
+</html>
