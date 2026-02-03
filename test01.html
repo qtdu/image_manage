@@ -11,11 +11,11 @@
 html,body{
   height:100%;
   margin:0;
-  overflow:hidden; /* ❗ trang không cuộn */
+  overflow:hidden;
   font-family:sans-serif;
 }
 
-/* ===== APP LAYOUT ===== */
+/* ===== APP ===== */
 .app{
   height:100%;
   display:flex;
@@ -38,12 +38,11 @@ html,body{
   border-radius:4px;
 }
 
-/* ===== COLLAPSIBLE ===== */
 .top-content{
   margin-top:10px;
 }
 
-/* ===== HEADER ROW ===== */
+/* ===== ROW ===== */
 .header-row{
   display:flex;
   align-items:center;
@@ -81,7 +80,6 @@ img.preview{
   object-fit:cover;
   border:1px solid #ccc;
   display:none;
-  flex-shrink:0;
 }
 
 /* ===== FORM ===== */
@@ -114,14 +112,13 @@ img.preview{
   max-width:240px;
 }
 
-/* ===== TABLE SCROLL ===== */
+/* ===== TABLE ===== */
 .table-wrap{
   flex:1;
   overflow:auto;
   background:#fff;
 }
 
-/* ===== TABLE ===== */
 table{
   width:100%;
   border-collapse:collapse;
@@ -139,26 +136,16 @@ thead th{
 th,td{
   border:1px solid #ddd;
   padding:6px;
-  vertical-align:top;
 }
 
-td[contenteditable]{
-  background:#f9f9f9;
-}
+td[contenteditable]{background:#f9f9f9}
+td:focus{outline:2px solid #4caf50}
 
-td:focus{
-  outline:2px solid #4caf50;
-}
-
-img.thumb{
-  max-width:80px;
-  display:block;
-}
+img.thumb{max-width:80px}
 
 /* ===== MOBILE ===== */
 @media(max-width:768px){
   .form-row{grid-template-columns:1fr}
-  img.thumb{max-width:60px}
 }
 </style>
 </head>
@@ -167,9 +154,8 @@ img.thumb{
 
 <div class="app">
 
-  <!-- ===== TOP PANEL ===== -->
+  <!-- ===== TOP ===== -->
   <div class="top-panel">
-
     <div class="top-title" onclick="toggleTop()">
       📤 Upload ảnh (ImgBB)
     </div>
@@ -206,7 +192,11 @@ img.thumb{
 
     <div class="table-header">
       <b>📋 Danh sách</b>
-      <input id="searchName" placeholder="Tìm theo Name..." oninput="filterTable()">
+      <input id="searchName"
+             placeholder="Tìm theo Name..."
+             oninput="filterTable()"
+             onfocus="hideTop()"
+             onblur="showTop()">
     </div>
 
     <div class="table-wrap">
@@ -231,21 +221,26 @@ img.thumb{
 const SHEET_API="https://script.google.com/macros/s/AKfycbymlIeO7SqDLqE_3HHGbhYyPlKiT1mlBSR58njBzUWHUGAbOQYdMnSvX7CeL0OkX48/exec";
 const IMGBB_KEY="98bce19081883f35f02cec232ce565b5";
 
-/* ===== COLLAPSE ===== */
 function toggleTop(){
-  const el=document.getElementById("topContent");
-  el.style.display = el.style.display==="none" ? "block" : "none";
+  const t=topContent;
+  t.style.display=t.style.display==="none"?"block":"none";
 }
 
-/* ===== PREVIEW ===== */
-function previewLocal(input){
-  const f=input.files[0];
+function hideTop(){
+  topContent.style.display="none";
+}
+
+function showTop(){
+  topContent.style.display="block";
+}
+
+function previewLocal(i){
+  const f=i.files[0];
   if(!f) return;
   preview.src=URL.createObjectURL(f);
   preview.style.display="block";
 }
 
-/* ===== LOAD ===== */
 function load(){
   fetch(SHEET_API).then(r=>r.json()).then(data=>{
     list.innerHTML="";
@@ -261,7 +256,6 @@ function load(){
   });
 }
 
-/* ===== SEARCH ===== */
 function filterTable(){
   const k=searchName.value.toLowerCase();
   document.querySelectorAll("#list tr").forEach(tr=>{
@@ -270,12 +264,10 @@ function filterTable(){
   });
 }
 
-/* ===== POST ===== */
 function post(d){
   return fetch(SHEET_API,{method:"POST",body:JSON.stringify(d)});
 }
 
-/* ===== ADD ===== */
 function add(){
   if(!link.value) return alert("Chưa upload ảnh");
   post({action:"add",link:link.value,name:name1.value,note:note.value}).then(()=>{
@@ -287,7 +279,6 @@ function add(){
   });
 }
 
-/* ===== SAVE ===== */
 function save(e,r,c,el){
   if(e.key==="Enter"){
     e.preventDefault();
@@ -296,12 +287,10 @@ function save(e,r,c,el){
   }
 }
 
-/* ===== DELETE ===== */
 function del(r){
   if(confirm("Xóa dòng này?")) post({action:"delete",row:r}).then(load);
 }
 
-/* ===== UPLOAD ===== */
 function uploadImage(){
   const f=imageInput.files[0];
   if(!f) return alert("Chọn ảnh");
