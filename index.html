@@ -15,9 +15,10 @@ td:focus{outline:2px solid #4caf50}
 <body>
 
 <h3>Thêm dữ liệu</h3>
-<input id="link" placeholder="Link hình">
-<input id="name" placeholder="Tên">
-<input id="note" placeholder="Chú thích">
+
+<input id="link" placeholder="Link">
+<input id="name" placeholder="Name">
+<input id="note" placeholder="Note">
 <button onclick="add()">Thêm</button>
 
 <hr>
@@ -69,7 +70,9 @@ function add(){
     name:name.value,
     note:note.value
   }).then(()=>{
-    link.value=name.value=note.value="";
+    link.value = "";
+    name.value = "";
+    note.value = "";
     load();
   });
 }
