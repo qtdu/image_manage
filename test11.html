@@ -322,6 +322,7 @@ const SHEET_API="https://script.google.com/macros/s/AKfycbymlIeO7SqDLqE_3HHGbhYy
 const IMGBB_KEY="98bce19081883f35f02cec232ce565b5";
 
 let allData=[];
+let nameCache = [];
 let curRow=0;
 let searchTimer=null;
 
@@ -348,8 +349,9 @@ const lazyObserver=new IntersectionObserver(entries=>{
 /* ===== LOAD ===== */
 function load(){
   fetch(SHEET_API).then(r=>r.json()).then(d=>{
-    allData=d.reverse();
-    renderGrid(allData);
+    allData = data;
+    rebuildNameCache();   // ⭐ cache ngay khi load
+    render();
   });
 }
 
@@ -494,6 +496,13 @@ document.addEventListener("click", e=>{
   }
 });
 
+function rebuildNameCache(){
+  nameCache = [...new Set(
+    allData
+      .map(i => i.name)
+      .filter(n => n && n.trim())
+  )];
+}
   
 load();
 </script>
