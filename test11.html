@@ -304,6 +304,7 @@ const IMGBB_KEY="98bce19081883f35f02cec232ce565b5";
 
 let allData=[];
 let nameCache = [];
+let autoInit = false;
 let curRow=0;
 let searchTimer=null;
 
@@ -333,7 +334,10 @@ function load(){
     allData=d.reverse();
 
     nameCache = [...new Set(allData.map(x=>x.name).filter(Boolean))];
-    initNameAutocomplete();
+    if(!autoInit){
+      initNameAutocomplete();
+      autoInit = true;
+    }
 
     renderGrid(allData);
   });
