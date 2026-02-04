@@ -220,6 +220,45 @@ textarea{
   .form-add{flex-wrap:nowrap}
   #searchBox{max-width:140px;font-size:12px}
 }
+
+/* ===== NAME SUGGEST ===== */
+.form-add{
+  position:relative; /* để dropdown bám theo ô Name */
+}
+
+.name-suggest{
+  position:absolute;
+  top:100%;
+  left:0;
+  right:90px;            /* chừa chỗ cho nút ➕ Thêm */
+  background:#fff;
+  border:1px solid #cfd6e4;
+  border-top:none;
+  max-height:200px;
+  overflow:auto;
+  z-index:1000;
+  display:none;
+}
+
+.name-suggest div{
+  padding:6px 8px;
+  cursor:pointer;
+}
+
+/* màu xen kẽ */
+.name-suggest div:nth-child(odd){
+  background:#f7f9fd;
+}
+.name-suggest div:nth-child(even){
+  background:#ffffff;
+}
+
+.name-suggest div:hover{
+  background:#e9edf5;
+}
+
+
+  
 </style>
 </head>
 
@@ -244,9 +283,11 @@ textarea{
     <input type="hidden" id="link">
 
     <div class="form-add">
-      <input id="name1" placeholder="Name">
+      <input id="name1" placeholder="Name" autocomplete="off">
       <button onclick="add()">➕ Thêm</button>
+      <div id="nameSuggest" class="name-suggest"></div>
     </div>
+
 
     <textarea id="note" rows="4" placeholder="Note"></textarea>
   </div>
@@ -287,26 +328,16 @@ const SHEET_API="https://script.google.com/macros/s/AKfycbymlIeO7SqDLqE_3HHGbhYy
 const IMGBB_KEY="98bce19081883f35f02cec232ce565b5";
 
 let allData=[];
-let filteredData=[];
 let curRow=0;
 let searchTimer=null;
 
-/* ===== VIRTUAL CONFIG ===== */
-const ITEM_HEIGHT = 180;   // chiều cao 1 card (ước lượng)
-const BUFFER = 6;          // render dư trên/dưới
-let startIndex = 0;
-
-const gridWrap = document.querySelector(".grid-wrap");
-const grid = document.getElementById("grid");
 const searchBox=document.getElementById("searchBox");
 const status=document.getElementById("status");
 
 /* ===== UTILS ===== */
 function post(d){return fetch(SHEET_API,{method:"POST",body:JSON.stringify(d)})}
 function removeVietnamese(str){
-  return str.normalize("NFD")
-    .replace(/[\u0300-\u036f]/g,"")
-    .replace(/đ/g,"d").replace(/Đ/g,"D");
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D");
 }
 
 /* ===== LAZY LOAD ===== */
@@ -318,76 +349,49 @@ const lazyObserver=new IntersectionObserver(entries=>{
       lazyObserver.unobserve(img);
     }
   });
-},{rootMargin:"200px"});
+},{rootMargin:"100px"});
 
 /* ===== LOAD ===== */
 function load(){
   fetch(SHEET_API).then(r=>r.json()).then(d=>{
     allData=d.reverse();
-    filteredData=[...allData];
-    renderVirtual();
+    renderGrid(allData);
   });
 }
 
-/* ===== HIGHLIGHT ===== */
-function highlight(text, key){
-  if(!key) return text;
-  const re=new RegExp(`(${key})`,"ig");
-  return text.replace(re,'<mark>$1</mark>');
-}
-
-/* ===== VIRTUAL RENDER ===== */
-function renderVirtual(){
-  const viewHeight = gridWrap.clientHeight;
-  const visibleCount = Math.ceil(viewHeight / ITEM_HEIGHT) + BUFFER*2;
-
-  const start = Math.max(0, startIndex - BUFFER);
-  const end = Math.min(filteredData.length, start + visibleCount);
-
+/* ===== RENDER ===== */
+function renderGrid(list){
   grid.innerHTML="";
-  grid.style.paddingTop = start * ITEM_HEIGHT + "px";
-  grid.style.paddingBottom = (filteredData.length - end) * ITEM_HEIGHT + "px";
+  if(!list.length){grid.innerHTML="<i>Không có dữ liệu</i>";return;}
 
-  const keyRaw = searchBox.value.trim();
-  const key = removeVietnamese(keyRaw.toLowerCase());
-
-  for(let i=start;i<end;i++){
-    const d = filteredData[i];
+  list.forEach(d=>{
     const div=document.createElement("div");
     div.className="card";
     div.innerHTML=`
       <img data-src="${d.link}" loading="lazy">
-      <div class="name">${highlight(d.name, keyRaw)}</div>
+      <div class="name">${d.name}</div>
     `;
     div.onclick=()=>openEdit(d);
     grid.appendChild(div);
     lazyObserver.observe(div.querySelector("img"));
-  }
+  });
 }
 
-/* ===== SCROLL ===== */
-gridWrap.addEventListener("scroll",()=>{
-  startIndex = Math.floor(gridWrap.scrollTop / ITEM_HEIGHT);
-  renderVirtual();
-});
-
 /* ===== SEARCH ===== */
-function applySearch(){
+function filterList(){
   const key=removeVietnamese(searchBox.value.toLowerCase());
-  filteredData = allData.filter(d =>
-    removeVietnamese(d.name.toLowerCase()).includes(key)
-  );
-  startIndex=0;
-  gridWrap.scrollTop=0;
-  renderVirtual();
+  document.querySelectorAll(".card").forEach(c=>{
+    const name=removeVietnamese(c.querySelector(".name").innerText.toLowerCase());
+    c.style.display=name.includes(key)?"":"none";
+  });
 }
 searchBox.addEventListener("input",()=>{
   clearTimeout(searchTimer);
-  searchTimer=setTimeout(applySearch,300);
+  searchTimer=setTimeout(filterList,250);
 });
 function clearSearch(){
   searchBox.value="";
-  applySearch();
+  filterList();
 }
 
 /* ===== CRUD ===== */
@@ -450,8 +454,53 @@ function add(){
     });
 }
 
+
+/* ===== NAME AUTOCOMPLETE ===== */
+const nameInput = document.getElementById("name1");
+const nameSuggest = document.getElementById("nameSuggest");
+
+function showNameSuggest(){
+  const key = removeVietnamese(nameInput.value.toLowerCase());
+
+  // lấy danh sách name đã có, không trùng
+  const names = [...new Set(allData.map(d => d.name))];
+
+  const list = names.filter(n =>
+    removeVietnamese(n.toLowerCase()).includes(key)
+  );
+
+  nameSuggest.innerHTML = "";
+
+  if(!list.length){
+    nameSuggest.style.display = "none";
+    return;
+  }
+
+  list.forEach(n=>{
+    const div = document.createElement("div");
+    div.textContent = n;
+    div.onclick = () => {
+      nameInput.value = n;
+      nameSuggest.style.display = "none";
+    };
+    nameSuggest.appendChild(div);
+  });
+
+  nameSuggest.style.display = "block";
+}
+
+nameInput.addEventListener("focus", showNameSuggest);
+nameInput.addEventListener("input", showNameSuggest);
+
+// click ra ngoài thì ẩn
+document.addEventListener("click", e=>{
+  if(!nameInput.contains(e.target) && !nameSuggest.contains(e.target)){
+    nameSuggest.style.display="none";
+  }
+});
+
+
 load();
 </script>
-
 </body>
 </html>
