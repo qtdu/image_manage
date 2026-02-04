@@ -383,7 +383,8 @@ function load(){
   fetch(SHEET_API).then(r=>r.json()).then(d=>{
     allData = d.reverse();
     renderGrid(allData);
-    buildNameSuggest(allData); // 👈 LUÔN cập nhật
+
+    buildAllNameSuggest(); // ← QUAN TRỌNG
   });
 }
 
@@ -484,22 +485,19 @@ function add(){
 
 const nameSuggest = document.getElementById("nameSuggest");
 
-function buildAllNameSuggest(list){
-  nameSuggest.innerHTML = "";
+function buildAllNameSuggest(){
+  const box=document.getElementById("nameSuggest");
+  box.innerHTML="";
 
-  list.forEach((row, i)=>{
-    if(!row.name) return;
-
-    const div = document.createElement("div");
-    div.textContent = row.name;
-    div.style.padding = "6px 8px";
-    div.style.borderBottom = "1px solid #eee";
-
-    nameSuggest.appendChild(div);
+  allData.forEach(d=>{
+    if(!d.name) return;
+    const div=document.createElement("div");
+    div.textContent=d.name;
+    box.appendChild(div);
   });
 }
 
-buildAllNameSuggest(data);
+
 
   
 load();
