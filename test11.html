@@ -244,25 +244,10 @@ textarea{
     <input type="hidden" id="link">
 
     <div class="form-add">
-      <div style="flex:1; position:relative">
-        <input id="name1" placeholder="Name" autocomplete="off">
-        <div id="nameSuggest" style="
-          position:absolute;
-          top:100%;
-          left:0;
-          right:0;
-          background:#fff;
-          border:1px solid #ccc;
-          border-top:none;
-          max-height:180px;
-          overflow:auto;
-          display:none;
-          z-index:999;
-        "></div>
-      </div>
+      <input id="name1" placeholder="Name">
+      <datalist id="nameList"></datalist>
       <button onclick="add()">➕ Thêm</button>
     </div>
-
 
     <textarea id="note" rows="4" placeholder="Note"></textarea>
   </div>
@@ -303,8 +288,6 @@ const SHEET_API="https://script.google.com/macros/s/AKfycbymlIeO7SqDLqE_3HHGbhYy
 const IMGBB_KEY="98bce19081883f35f02cec232ce565b5";
 
 let allData=[];
-let nameCache = [];
-let autoInit = false;
 let curRow=0;
 let searchTimer=null;
 
@@ -330,17 +313,13 @@ const lazyObserver=new IntersectionObserver(entries=>{
 
 /* ===== LOAD ===== */
 function load(){
-  fetch(SHEET_API).then(r=>r.json()).then(d=>{
-    allData=d.reverse();
-
-    nameCache = [...new Set(allData.map(x=>x.name).filter(Boolean))];
-    if(!autoInit){
-      initNameAutocomplete();
-      autoInit = true;
-    }
-
-    renderGrid(allData);
-  });
+  fetch(SHEET_API)
+    .then(r=>r.json())
+    .then(d=>{
+      allData = d.reverse();
+      renderGrid(allData);
+      buildNameSuggest(allData); // 👈 gợi nhớ cho name1
+    });
 }
 
 /* ===== RENDER ===== */
@@ -438,51 +417,26 @@ function add(){
     });
 }
 
-function initNameAutocomplete(){
-  const input = document.getElementById("name1");
-  const box = document.getElementById("nameSuggest");
+function buildNameSuggest(list){
+  const dl = document.getElementById("nameList");
+  dl.innerHTML = "";
 
-  input.addEventListener("input", ()=>{
-    const key = input.value.trim().toLowerCase();
-    if(!key){
-      box.style.display="none";
-      return;
+  const set = new Set(); // chống trùng
+
+  list.forEach(d=>{
+    if(d.name && d.name.trim()){
+      set.add(d.name.trim());
     }
-
-    const list = nameCache.filter(n =>
-      n.toLowerCase().includes(key)
-    ).slice(0,20);
-
-    if(!list.length){
-      box.style.display="none";
-      return;
-    }
-
-    box.innerHTML = list.map(n=>`
-      <div style="
-        padding:6px 8px;
-        cursor:pointer;
-        border-bottom:1px solid #eee
-      ">${n}</div>
-    `).join("");
-
-    box.style.display="block";
-
-    [...box.children].forEach(div=>{
-      div.onclick=()=>{
-        input.value = div.textContent;
-        box.style.display="none";
-      };
-    });
   });
 
-  document.addEventListener("click",e=>{
-    if(!box.contains(e.target) && e.target!==input){
-      box.style.display="none";
-    }
+  set.forEach(n=>{
+    const o = document.createElement("option");
+    o.value = n;
+    dl.appendChild(o);
   });
 }
 
+  
 load();
 </script>
 </body>
