@@ -347,9 +347,13 @@ textarea{
     </div>
     <textarea id="eNote" rows="4"></textarea>
     <div class="img-box"><img id="eImg"></div>
+    
+    <input type="file" id="eImageInput" accept="image/*" style="display:none">
     <div class="btns">
-      <button onclick="saveEdit()">💾 Save</button>
-      <button onclick="closeEdit()">❌ Cancel</button>
+      <button onclick="chooseEditImage()">📁</button>
+      <button onclick="uploadEditImage()">⬆</button>
+      <button onclick="saveEdit()">💾</button>
+      <button onclick="closeEdit()">❌</button>
       <button onclick="del(curRow)">🗑</button>
     </div>
   </div>
@@ -370,8 +374,6 @@ const nameSuggest = document.getElementById("nameSuggest");
 
 function buildNameSuggest(){
   nameSuggest.innerHTML = "";
-
-  alert("allData = " + allData.length);
 
   allData.forEach(d=>{
     if(!d.name) return;
@@ -530,15 +532,31 @@ function openEdit(d){
   eImg.src=d.link;
   overlay.style.display="flex";
 
-  buildEditNameSuggest(); // 👈 THÊM DÒNG NÀY
+  newEditImageFile = null;
+  newEditImageLink = "";
+
+  buildEditNameSuggest();
 }
+
   
 function closeEdit(){overlay.style.display="none"}
+
+
 function saveEdit(){
   post({action:"update",row:curRow,col:3,value:eName.value});
-  post({action:"update",row:curRow,col:4,value:eNote.value})
-    .then(()=>{closeEdit();load()});
+  post({action:"update",row:curRow,col:4,value:eNote.value});
+
+  // 👇 nếu có ảnh mới thì update link
+  if(newEditImageLink){
+    post({action:"update",row:curRow,col:2,value:newEditImageLink});
+  }
+
+  Promise.resolve().then(()=>{
+    closeEdit();
+    load();
+  });
 }
+
 function del(r){
   if(confirm("Xóa?")){
     post({action:"delete",row:r}).then(()=>{closeEdit();load()});
@@ -586,6 +604,48 @@ function add(){
 }
 
 
+const eImageInput = document.getElementById("eImageInput");
+let newEditImageFile = null;
+let newEditImageLink = "";
+
+function chooseEditImage(){
+  eImageInput.click();
+}
+
+eImageInput.onchange = function(){
+  const f = this.files[0];
+  if(!f) return;
+
+  newEditImageFile = f;
+  newEditImageLink = "";
+
+  eImg.src = URL.createObjectURL(f); // 👈 preview ngay
+};
+
+function uploadEditImage(){
+  if(!newEditImageFile){
+    alert("Chưa chọn ảnh mới");
+    return;
+  }
+
+  status.textContent="⏳ Upload ảnh mới...";
+
+  const rd = new FileReader();
+  rd.onload = ()=>{
+    const fd = new FormData();
+    fd.append("key", IMGBB_KEY);
+    fd.append("image", rd.result.split(",")[1]);
+
+    fetch("https://api.imgbb.com/1/upload",{method:"POST",body:fd})
+      .then(r=>r.json())
+      .then(res=>{
+        newEditImageLink = res.data.url;
+        eImg.src = newEditImageLink;
+        status.textContent="✔ Ảnh mới đã upload";
+      });
+  };
+  rd.readAsDataURL(newEditImageFile);
+}
 
 
 
