@@ -220,6 +220,32 @@ textarea{
   .form-add{flex-wrap:nowrap}
   #searchBox{max-width:140px;font-size:12px}
 }
+
+#nameSuggest{
+  position:absolute;
+  top:100%;
+  left:0;
+  right:52px; /* chừa chỗ cho nút */
+  max-height:140px;
+  overflow:auto;
+  border:1px solid #cfd6e4;
+  background:#fff;
+  z-index:999;
+  font-size:13px;
+}
+
+#nameSuggest div{
+  padding:6px 8px;
+  cursor:pointer;
+  border-bottom:1px solid #eee;
+}
+
+#nameSuggest div:hover{
+  background:#2d6cdf;
+  color:#fff;
+}
+
+  
 </style>
 </head>
 
@@ -243,10 +269,12 @@ textarea{
 
     <input type="hidden" id="link">
 
-    <div class="form-add">
-      <input id="name1" placeholder="Name">
-      <datalist id="nameList"></datalist>
+    <div class="form-add" style="position:relative">
+      <input id="name1" placeholder="Name" autocomplete="off">
       <button onclick="add()">➕ Thêm</button>
+    
+      <!-- GỢI NHỚ -->
+      <div id="nameSuggest"></div>
     </div>
 
     <textarea id="note" rows="4" placeholder="Note"></textarea>
@@ -300,6 +328,44 @@ function removeVietnamese(str){
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D");
 }
 
+const nameSuggest = document.getElementById("nameSuggest");
+const nameInput = document.getElementById("name1");
+
+function buildNameSuggest(list){
+  nameSuggest.innerHTML = "";
+
+  const set = new Set();
+
+  list.forEach(d=>{
+    if(d.name && d.name.trim()){
+      set.add(d.name.trim());
+    }
+  });
+
+  if(!set.size){
+    nameSuggest.innerHTML = "<div><i>Chưa có tên</i></div>";
+    return;
+  }
+
+  set.forEach(n=>{
+    const div = document.createElement("div");
+    div.textContent = n;
+    div.onclick = ()=>{
+      nameInput.value = n;
+    };
+    nameSuggest.appendChild(div);
+  });
+}
+
+nameInput.addEventListener("input", ()=>{
+  const key = removeVietnamese(nameInput.value.toLowerCase());
+  document.querySelectorAll("#nameSuggest div").forEach(d=>{
+    const txt = removeVietnamese(d.textContent.toLowerCase());
+    d.style.display = txt.includes(key) ? "" : "none";
+  });
+});
+
+
 /* ===== LAZY LOAD ===== */
 const lazyObserver=new IntersectionObserver(entries=>{
   entries.forEach(e=>{
@@ -313,13 +379,11 @@ const lazyObserver=new IntersectionObserver(entries=>{
 
 /* ===== LOAD ===== */
 function load(){
-  fetch(SHEET_API)
-    .then(r=>r.json())
-    .then(d=>{
-      allData = d.reverse();
-      renderGrid(allData);
-      buildNameSuggest(allData); // 👈 gợi nhớ cho name1
-    });
+  fetch(SHEET_API).then(r=>r.json()).then(d=>{
+    allData = d.reverse();
+    renderGrid(allData);
+    buildNameSuggest(allData); // 👈 LUÔN cập nhật
+  });
 }
 
 /* ===== RENDER ===== */
@@ -417,31 +481,6 @@ function add(){
     });
 }
 
-function buildNameSuggest(list){
-  const dl = document.getElementById("nameList");
-  dl.innerHTML = "";
-
-  // mồi
-  const empty = document.createElement("option");
-  empty.value = "";
-  dl.appendChild(empty);
-
-  const set = new Set();
-  list.forEach(d=>{
-    if(d.name && d.name.trim()){
-      set.add(d.name.trim());
-    }
-  });
-
-  set.forEach(n=>{
-    const o = document.createElement("option");
-    o.value = n;
-    dl.appendChild(o);
-  });
-}
-
-
-  
 load();
 </script>
 </body>
