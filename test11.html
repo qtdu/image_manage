@@ -256,6 +256,35 @@ textarea{
 #nameSuggest{
   display:none; /* 👈 thêm dòng này */
 }
+
+
+#eNameSuggest{
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+
+  background: #fff;
+  border: 1px solid #ccc;
+  border-top: none;
+
+  max-height: 180px;
+  overflow-y: auto;
+
+  display: none;
+  box-shadow: 0 4px 10px rgba(0,0,0,.15);
+}
+
+#eNameSuggest div{
+  padding: 6px 8px;
+  cursor: pointer;
+}
+#eNameSuggest div:hover{
+  background:#2d6cdf;
+  color:#fff;
+}
+
   
 </style>
 </head>
@@ -312,7 +341,10 @@ textarea{
 <!-- ===== POPUP ===== -->
 <div class="overlay" id="overlay">
   <div class="popup">
-    <input id="eName">
+    <div class="name-wrap">
+      <input id="eName">
+      <div id="eNameSuggest"></div>
+    </div>
     <textarea id="eNote" rows="4"></textarea>
     <div class="img-box"><img id="eImg"></div>
     <div class="btns">
@@ -382,7 +414,52 @@ document.addEventListener("click",(e)=>{
   if(!e.target.closest("#name1") && !e.target.closest("#nameSuggest")){
     nameSuggest.style.display="none";
   }
+  if(!e.target.closest("#eName") && !e.target.closest("#eNameSuggest")){
+    eNameSuggest.style.display="none";
+  }
 });
+
+
+const eNameInput = document.getElementById("eName");
+const eNameSuggest = document.getElementById("eNameSuggest");
+
+function buildEditNameSuggest(){
+  eNameSuggest.innerHTML="";
+
+  allData.forEach(d=>{
+    if(!d.name) return;
+
+    const div=document.createElement("div");
+    div.textContent=d.name;
+    div.onclick=()=>{
+      eNameInput.value=d.name;
+      eNameSuggest.style.display="none";
+    };
+    eNameSuggest.appendChild(div);
+  });
+}
+
+eNameInput.addEventListener("focus",()=>{
+  document.querySelectorAll("#eNameSuggest div").forEach(d=>d.style.display="");
+  eNameSuggest.style.display="block";
+});
+
+eNameInput.addEventListener("input",()=>{
+  const key=removeVietnamese(eNameInput.value.toLowerCase());
+  let has=false;
+
+  document.querySelectorAll("#eNameSuggest div").forEach(d=>{
+    const txt=removeVietnamese(d.textContent.toLowerCase());
+    const ok=txt.includes(key);
+    d.style.display=ok?"":"none";
+    if(ok) has=true;
+  });
+
+  eNameSuggest.style.display=has?"block":"none";
+});
+
+
+  
 
 /* ===== UTILS ===== */
 function post(d){return fetch(SHEET_API,{method:"POST",body:JSON.stringify(d)})}
@@ -452,7 +529,10 @@ function openEdit(d){
   eNote.value=d.note;
   eImg.src=d.link;
   overlay.style.display="flex";
+
+  buildEditNameSuggest(); // 👈 THÊM DÒNG NÀY
 }
+  
 function closeEdit(){overlay.style.display="none"}
 function saveEdit(){
   post({action:"update",row:curRow,col:3,value:eName.value});
