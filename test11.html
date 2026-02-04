@@ -221,16 +221,16 @@ textarea{
   #searchBox{max-width:140px;font-size:12px}
 }
 
-/* ===== NAME SUGGEST ===== */
+/* ===== NAME AUTOCOMPLETE ===== */
 .form-add{
-  position:relative; /* để dropdown bám theo ô Name */
+  position:relative; /* bắt buộc */
 }
 
 .name-suggest{
   position:absolute;
   top:100%;
   left:0;
-  right:90px;            /* chừa chỗ cho nút ➕ Thêm */
+  right:90px;              /* chừa chỗ cho nút Thêm */
   background:#fff;
   border:1px solid #cfd6e4;
   border-top:none;
@@ -246,17 +246,12 @@ textarea{
 }
 
 /* màu xen kẽ */
-.name-suggest div:nth-child(odd){
-  background:#f7f9fd;
-}
-.name-suggest div:nth-child(even){
-  background:#ffffff;
-}
+.name-suggest div:nth-child(odd){background:#f6f8fc}
+.name-suggest div:nth-child(even){background:#ffffff}
 
 .name-suggest div:hover{
   background:#e9edf5;
 }
-
 
   
 </style>
@@ -287,7 +282,6 @@ textarea{
       <button onclick="add()">➕ Thêm</button>
       <div id="nameSuggest" class="name-suggest"></div>
     </div>
-
 
     <textarea id="note" rows="4" placeholder="Note"></textarea>
   </div>
@@ -454,29 +448,30 @@ function add(){
     });
 }
 
-
-/* ===== NAME AUTOCOMPLETE ===== */
+/* ===== NAME AUTOCOMPLETE (KHÔNG ĐỤNG SEARCH LIST) ===== */
 const nameInput = document.getElementById("name1");
 const nameSuggest = document.getElementById("nameSuggest");
 
 function showNameSuggest(){
+  if(!allData.length) return;
+
   const key = removeVietnamese(nameInput.value.toLowerCase());
 
-  // lấy danh sách name đã có, không trùng
+  // lấy name đã có, không trùng
   const names = [...new Set(allData.map(d => d.name))];
 
-  const list = names.filter(n =>
+  const matched = names.filter(n =>
     removeVietnamese(n.toLowerCase()).includes(key)
   );
 
   nameSuggest.innerHTML = "";
 
-  if(!list.length){
+  if(!matched.length){
     nameSuggest.style.display = "none";
     return;
   }
 
-  list.forEach(n=>{
+  matched.forEach(n=>{
     const div = document.createElement("div");
     div.textContent = n;
     div.onclick = () => {
@@ -489,17 +484,17 @@ function showNameSuggest(){
   nameSuggest.style.display = "block";
 }
 
-nameInput.addEventListener("focus", showNameSuggest);
 nameInput.addEventListener("input", showNameSuggest);
+nameInput.addEventListener("focus", showNameSuggest);
 
 // click ra ngoài thì ẩn
 document.addEventListener("click", e=>{
   if(!nameInput.contains(e.target) && !nameSuggest.contains(e.target)){
-    nameSuggest.style.display="none";
+    nameSuggest.style.display = "none";
   }
 });
 
-
+  
 load();
 </script>
 </body>
