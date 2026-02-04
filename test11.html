@@ -421,8 +421,12 @@ function buildNameSuggest(list){
   const dl = document.getElementById("nameList");
   dl.innerHTML = "";
 
-  const set = new Set(); // chống trùng
+  // mồi
+  const empty = document.createElement("option");
+  empty.value = "";
+  dl.appendChild(empty);
 
+  const set = new Set();
   list.forEach(d=>{
     if(d.name && d.name.trim()){
       set.add(d.name.trim());
@@ -435,6 +439,7 @@ function buildNameSuggest(list){
     dl.appendChild(o);
   });
 }
+
 
   
 load();
