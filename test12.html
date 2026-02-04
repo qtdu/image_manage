@@ -92,8 +92,9 @@ textarea{
   display:flex;
   gap:8px;
   margin-top:8px;
+  position:relative;
 }
-.form-add input{flex:1}
+.form-add input{flex:1; min-width:0;}
 
 /* ===== NOTE ===== */
 #note{margin-top:6px}
@@ -336,15 +337,18 @@ function removeVietnamese(str){
 }
 
 /* ===== LAZY LOAD ===== */
-const lazyObserver=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{
-    if(e.isIntersecting){
-      const img=e.target;
-      img.src=img.dataset.src;
+const lazyObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const img = e.target;
+      img.src = img.dataset.src;
       lazyObserver.unobserve(img);
     }
   });
-},{rootMargin:"200px"});
+}, {
+  root: gridWrap,        // ✅ BẮT BUỘC
+  rootMargin: "200px"
+});
 
 /* ===== LOAD ===== */
 function load(){
