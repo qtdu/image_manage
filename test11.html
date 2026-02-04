@@ -226,7 +226,7 @@ textarea{
   top:100%;
   left:0;
   right:52px;
-  min-height:32px;   /* 👈 QUAN TRỌNG */
+  min-height:100px;   /* 👈 QUAN TRỌNG */
   max-height:140px;
   overflow:auto;
   border:1px solid #cfd6e4;
@@ -482,6 +482,26 @@ function add(){
     });
 }
 
+const nameSuggest = document.getElementById("nameSuggest");
+
+function buildAllNameSuggest(list){
+  nameSuggest.innerHTML = "";
+
+  list.forEach((row, i)=>{
+    if(!row.name) return;
+
+    const div = document.createElement("div");
+    div.textContent = row.name;
+    div.style.padding = "6px 8px";
+    div.style.borderBottom = "1px solid #eee";
+
+    nameSuggest.appendChild(div);
+  });
+}
+
+buildAllNameSuggest(data);
+
+  
 load();
 </script>
 </body>
