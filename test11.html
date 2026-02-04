@@ -323,7 +323,7 @@ function buildNameSuggest(){
   allData.forEach(d=>{
     if(d.name) set.add(d.name.trim());
   });
-
+ /*
   set.forEach(n=>{
     const div=document.createElement("div");
     div.textContent=n;
@@ -333,6 +333,7 @@ function buildNameSuggest(){
     };
     nameSuggest.appendChild(div);
   });
+  */
 }
 
 nameInput.addEventListener("input",()=>{
