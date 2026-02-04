@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sheet + ImgBB Card</title>
+
+<style>
+*{box-sizing:border-box}
+html,body{
+  height:100%;
+  margin:0;
+  overflow:hidden;
+  font-family:sans-serif;
+}
+
+/* ===== APP ===== */
+.app{
+  height:100%;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ===== TOP ===== */
+.top-panel{
+  background:#f3f6fb;
+  border-bottom:2px solid #cfd6e4;
+  padding:10px;
+}
+.top-title{
+  background:#2d6cdf;
+  color:#fff;
+  padding:8px 12px;
+  border-radius:4px;
+  cursor:pointer;
+}
+.top-content{
+  margin-top:10px;
+  transition:.25s;
+  max-height:520px;
+}
+.top-content.hide{
+  max-height:0;
+  opacity:0;
+  overflow:hidden;
+}
+
+/* ===== INPUT ===== */
+input,textarea,button{
+  padding:8px;
+  font-size:14px;
+}
+textarea{
+  resize:vertical;
+  min-height:88px;
+  max-height:160px;
+  width:100%;
+}
+
+/* ===== UPLOAD ===== */
+.upload-row{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:nowrap;
+}
+.file-box{flex-shrink:0}
+.file-box input[type=file]{display:none}
+.file-box button{
+  white-space:nowrap;
+  background:#e9edf5;
+  border:1px solid #cfd6e4;
+  border-radius:4px;
+  cursor:pointer;
+}
+.preview{
+  width:48px;
+  height:48px;
+  object-fit:cover;
+  border:1px solid #ccc;
+  display:none;
+}
+#status{
+  font-size:13px;
+  font-weight:bold;
+  color:#2d6cdf;
+  white-space:nowrap;
+}
+
+/* ===== ADD FORM ===== */
+.form-add{
+  display:flex;
+  gap:8px;
+  margin-top:8px;
+}
+.form-add input{flex:1}
+
+/* ===== NOTE ===== */
+#note{margin-top:6px}
+
+/* ===== LIST PANEL ===== */
+.list-panel{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+/* header + search */
+.list-header{
+  background:#1f4fbf;
+  color:#fff;
+  padding:8px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.list-header span{font-weight:bold}
+
+.search-wrap{
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+
+#searchBox{
+  max-width:220px;
+  width:100%;
+  padding:6px 10px;
+  font-size:13px;
+  border-radius:4px;
+  border:1px solid #cfd6e4;
+}
+
+/* ===== GRID ===== */
+.grid-wrap{
+  flex:1;
+  overflow:auto;
+  padding:10px;
+  background:#fff;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  gap:10px;
+}
+@media(max-width:1200px){.grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:768px){.grid{grid-template-columns:repeat(2,1fr)}}
+
+.card{
+  border:1px solid #ddd;
+  border-radius:6px;
+  overflow:hidden;
+  cursor:pointer;
+  background:#fff;
+}
+.card img{
+  width:100%;
+  height:120px;
+  object-fit:cover;
+}
+.card .name{
+  padding:6px;
+  text-align:center;
+  font-weight:bold;
+  font-size:14px;
+}
+
+/* ===== POPUP ===== */
+.overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+}
+.popup{
+  background:#fff;
+  width:90%;
+  max-width:420px;
+  height:90%;
+  display:flex;
+  flex-direction:column;
+  padding:10px;
+  border-radius:6px;
+}
+.popup input,.popup textarea{margin-bottom:6px}
+.popup .img-box{
+  flex:1;
+  border:1px solid #ccc;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+.popup .img-box img{
+  max-height:100%;
+  max-width:100%;
+  object-fit:contain;
+}
+.popup .btns{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-top:8px;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width:480px){
+  .file-box button,
+  .upload-row > button{
+    padding:6px 8px;
+    font-size:13px;
+    white-space:nowrap;
+  }
+  .preview{width:40px;height:40px}
+  .form-add{flex-wrap:nowrap}
+  #searchBox{max-width:140px;font-size:12px}
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<!-- ===== TOP ===== -->
+<div class="top-panel">
+  <div class="top-title" onclick="topContent.classList.toggle('hide')">📤 Upload ảnh</div>
+
+  <div class="top-content" id="topContent">
+    <div class="upload-row">
+      <div class="file-box">
+        <button onclick="imageInput.click()">📁 Chọn ảnh</button>
+        <input type="file" id="imageInput" accept="image/*" onchange="previewLocal(this)">
+      </div>
+      <button onclick="uploadImage()">⬆ Upload</button>
+      <img id="preview" class="preview">
+      <div id="status"></div>
+    </div>
+
+    <input type="hidden" id="link">
+
+    <div class="form-add">
+      <input id="name1" placeholder="Name">
+      <button onclick="add()">➕ Thêm</button>
+    </div>
+
+    <textarea id="note" rows="4" placeholder="Note"></textarea>
+  </div>
+</div>
+
+<!-- ===== LIST ===== -->
+<div class="list-panel">
+  <div class="list-header">
+    <span>📋 Danh sách</span>
+    <div class="search-wrap">
+      <input id="searchBox" placeholder="🔍 Tìm theo tên...">
+      <button onclick="clearSearch()">❌</button>
+    </div>
+  </div>
+  <div class="grid-wrap">
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+</div>
+
+<!-- ===== POPUP ===== -->
+<div class="overlay" id="overlay">
+  <div class="popup">
+    <input id="eName">
+    <textarea id="eNote" rows="4"></textarea>
+    <div class="img-box"><img id="eImg"></div>
+    <div class="btns">
+      <button onclick="saveEdit()">💾 Save</button>
+      <button onclick="closeEdit()">❌ Cancel</button>
+      <button onclick="del(curRow)">🗑</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHEET_API="https://script.google.com/macros/s/AKfycbymlIeO7SqDLqE_3HHGbhYyPlKiT1mlBSR58njBzUWHUGAbOQYdMnSvX7CeL0OkX48/exec";
+const IMGBB_KEY="98bce19081883f35f02cec232ce565b5";
+
+let allData=[];
+let filteredData=[];
+let curRow=0;
+let searchTimer=null;
+
+/* ===== VIRTUAL CONFIG ===== */
+const ITEM_HEIGHT = 180;   // chiều cao 1 card (ước lượng)
+const BUFFER = 6;          // render dư trên/dưới
+let startIndex = 0;
+
+const gridWrap = document.querySelector(".grid-wrap");
+const grid = document.getElementById("grid");
+const searchBox=document.getElementById("searchBox");
+const status=document.getElementById("status");
+
+/* ===== UTILS ===== */
+function post(d){return fetch(SHEET_API,{method:"POST",body:JSON.stringify(d)})}
+function removeVietnamese(str){
+  return str.normalize("NFD")
+    .replace(/[\u0300-\u036f]/g,"")
+    .replace(/đ/g,"d").replace(/Đ/g,"D");
+}
+
+/* ===== LAZY LOAD ===== */
+const lazyObserver=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const img=e.target;
+      img.src=img.dataset.src;
+      lazyObserver.unobserve(img);
+    }
+  });
+},{rootMargin:"200px"});
+
+/* ===== LOAD ===== */
+function load(){
+  fetch(SHEET_API).then(r=>r.json()).then(d=>{
+    allData=d.reverse();
+    filteredData=[...allData];
+    renderVirtual();
+  });
+}
+
+/* ===== HIGHLIGHT ===== */
+function highlight(text, key){
+  if(!key) return text;
+  const re=new RegExp(`(${key})`,"ig");
+  return text.replace(re,'<mark>$1</mark>');
+}
+
+/* ===== VIRTUAL RENDER ===== */
+function renderVirtual(){
+  const viewHeight = gridWrap.clientHeight;
+  const visibleCount = Math.ceil(viewHeight / ITEM_HEIGHT) + BUFFER*2;
+
+  const start = Math.max(0, startIndex - BUFFER);
+  const end = Math.min(filteredData.length, start + visibleCount);
+
+  grid.innerHTML="";
+  grid.style.paddingTop = start * ITEM_HEIGHT + "px";
+  grid.style.paddingBottom = (filteredData.length - end) * ITEM_HEIGHT + "px";
+
+  const keyRaw = searchBox.value.trim();
+  const key = removeVietnamese(keyRaw.toLowerCase());
+
+  for(let i=start;i<end;i++){
+    const d = filteredData[i];
+    const div=document.createElement("div");
+    div.className="card";
+    div.innerHTML=`
+      <img data-src="${d.link}" loading="lazy">
+      <div class="name">${highlight(d.name, keyRaw)}</div>
+    `;
+    div.onclick=()=>openEdit(d);
+    grid.appendChild(div);
+    lazyObserver.observe(div.querySelector("img"));
+  }
+}
+
+/* ===== SCROLL ===== */
+gridWrap.addEventListener("scroll",()=>{
+  startIndex = Math.floor(gridWrap.scrollTop / ITEM_HEIGHT);
+  renderVirtual();
+});
+
+/* ===== SEARCH ===== */
+function applySearch(){
+  const key=removeVietnamese(searchBox.value.toLowerCase());
+  filteredData = allData.filter(d =>
+    removeVietnamese(d.name.toLowerCase()).includes(key)
+  );
+  startIndex=0;
+  gridWrap.scrollTop=0;
+  renderVirtual();
+}
+searchBox.addEventListener("input",()=>{
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(applySearch,300);
+});
+function clearSearch(){
+  searchBox.value="";
+  applySearch();
+}
+
+/* ===== CRUD ===== */
+function openEdit(d){
+  curRow=d.row;
+  eName.value=d.name;
+  eNote.value=d.note;
+  eImg.src=d.link;
+  overlay.style.display="flex";
+}
+function closeEdit(){overlay.style.display="none"}
+function saveEdit(){
+  post({action:"update",row:curRow,col:3,value:eName.value});
+  post({action:"update",row:curRow,col:4,value:eNote.value})
+    .then(()=>{closeEdit();load()});
+}
+function del(r){
+  if(confirm("Xóa?")){
+    post({action:"delete",row:r}).then(()=>{closeEdit();load()});
+  }
+}
+
+/* ===== UPLOAD ===== */
+function previewLocal(i){
+  const f=i.files[0];
+  if(!f)return;
+  preview.src=URL.createObjectURL(f);
+  preview.style.display="block";
+}
+function uploadImage(){
+  const f=imageInput.files[0];
+  if(!f)return alert("Chọn ảnh");
+  status.textContent="⏳ Đang upload...";
+  const rd=new FileReader();
+  rd.onload=()=>{
+    const fd=new FormData();
+    fd.append("key",IMGBB_KEY);
+    fd.append("image",rd.result.split(",")[1]);
+    fetch("https://api.imgbb.com/1/upload",{method:"POST",body:fd})
+      .then(r=>r.json())
+      .then(res=>{
+        link.value=res.data.url;
+        preview.src=res.data.url;
+        preview.style.display="block";
+        status.textContent="✔ Upload xong";
+      });
+  };
+  rd.readAsDataURL(f);
+}
+function add(){
+  if(!link.value)return alert("Upload ảnh trước");
+  post({action:"add",link:link.value,name:name1.value,note:note.value})
+    .then(()=>{
+      name1.value="";
+      note.value="";
+      preview.style.display="none";
+      link.value="";
+      status.textContent="";
+      load();
+    });
+}
+
+load();
+</script>
+
+</body>
+</html>
