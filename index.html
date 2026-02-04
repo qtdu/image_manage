@@ -586,7 +586,7 @@ function uploadImage(){
         preview.src=res.data.url;
         preview.style.display="block";
         status.textContent="✔ Upload xong";
-        alert("✔ Upload xong")
+        
       });
   };
   rd.readAsDataURL(f);
@@ -642,7 +642,8 @@ function uploadEditImage(){
       .then(res=>{
         newEditImageLink = res.data.url;
         eImg.src = newEditImageLink;
-        status.textContent="✔ Ảnh mới đã upload";
+        //status.textContent="✔ Ảnh mới đã upload";
+        alert("✔ Upload xong")
       });
   };
   rd.readAsDataURL(newEditImageFile);
