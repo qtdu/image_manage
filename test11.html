@@ -313,6 +313,35 @@ let searchTimer=null;
 
 const searchBox=document.getElementById("searchBox");
 const status=document.getElementById("status");
+const nameInput = document.getElementById("name1");
+const nameSuggest = document.getElementById("nameSuggest");
+
+function buildNameSuggest(){
+  nameSuggest.innerHTML = "";
+
+  const set = new Set();
+  allData.forEach(d=>{
+    if(d.name) set.add(d.name.trim());
+  });
+
+  set.forEach(n=>{
+    const div=document.createElement("div");
+    div.textContent=n;
+    div.onclick=()=>{
+      nameInput.value=n;
+      nameSuggest.innerHTML="";
+    };
+    nameSuggest.appendChild(div);
+  });
+}
+
+nameInput.addEventListener("input",()=>{
+  const key=removeVietnamese(nameInput.value.toLowerCase());
+  document.querySelectorAll("#nameSuggest div").forEach(d=>{
+    const txt=removeVietnamese(d.textContent.toLowerCase());
+    d.style.display = txt.includes(key) ? "" : "none";
+  });
+});
 
 /* ===== UTILS ===== */
 function post(d){return fetch(SHEET_API,{method:"POST",body:JSON.stringify(d)})}
@@ -436,35 +465,7 @@ function add(){
 }
 
 
-const nameInput = document.getElementById("name1");
-const nameSuggest = document.getElementById("nameSuggest");
 
-function buildNameSuggest(){
-  nameSuggest.innerHTML = "";
-
-  const set = new Set();
-  allData.forEach(d=>{
-    if(d.name) set.add(d.name.trim());
-  });
-
-  set.forEach(n=>{
-    const div=document.createElement("div");
-    div.textContent=n;
-    div.onclick=()=>{
-      nameInput.value=n;
-      nameSuggest.innerHTML="";
-    };
-    nameSuggest.appendChild(div);
-  });
-}
-
-nameInput.addEventListener("input",()=>{
-  const key=removeVietnamese(nameInput.value.toLowerCase());
-  document.querySelectorAll("#nameSuggest div").forEach(d=>{
-    const txt=removeVietnamese(d.textContent.toLowerCase());
-    d.style.display = txt.includes(key) ? "" : "none";
-  });
-});
 
 
 load();
