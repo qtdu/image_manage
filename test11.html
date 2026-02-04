@@ -92,6 +92,7 @@ textarea{
   display:flex;
   gap:8px;
   margin-top:8px;
+  position:relative;
 }
 .form-add input{flex:1}
 
@@ -222,14 +223,24 @@ textarea{
 }
 
 #nameSuggest{
-  border:1px solid #ccc;
-  margin-top:4px;
-  min-height:100px;
-  max-height:140px;
-  overflow:auto;
+  position:absolute;
+  top:100%;
+  left:0;
+  right:0;
+
+  z-index:9999;
   background:#fff;
+  border:1px solid #ccc;
+  border-radius:4px;
+
+  max-height:160px;
+  overflow:auto;
   font-size:13px;
+
+  display:none; /* 👈 mặc định ẩn */
+  box-shadow:0 6px 16px rgba(0,0,0,.15);
 }
+  
 #nameSuggest div{
   padding:6px 8px;
   cursor:pointer;
@@ -267,8 +278,8 @@ textarea{
     <div class="form-add">
       <input id="name1" placeholder="Name">
       <button onclick="add()">➕ Thêm</button>
+      <div id="nameSuggest"></div>
     </div>
-    <div id="nameSuggest"></div>
     <textarea id="note" rows="4" placeholder="Note"></textarea>
   </div>
 </div>
@@ -319,28 +330,56 @@ const nameSuggest = document.getElementById("nameSuggest");
 function buildNameSuggest(){
   nameSuggest.innerHTML = "";
 
-  alert("allData = " + allData.length);
+  const set = new Set(
+    allData
+      .map(d => d.name && d.name.trim())
+      .filter(Boolean)
+  );
 
-  allData.forEach(d=>{
-    if(!d.name) return;
-
+  set.forEach(n=>{
     const div = document.createElement("div");
-    div.textContent = d.name;
+    div.textContent = n;
     div.onclick = () => {
-      nameInput.value = d.name;
+      nameInput.value = n;
+      hideSuggest();
     };
     nameSuggest.appendChild(div);
   });
 }
 
+nameInput.addEventListener("focus",()=>{
+  if(nameSuggest.children.length){
+    showSuggest();
+  }
+});
 
 nameInput.addEventListener("input",()=>{
-  const key=removeVietnamese(nameInput.value.toLowerCase());
+  const key = removeVietnamese(nameInput.value.toLowerCase());
+  let hasItem = false;
+
   document.querySelectorAll("#nameSuggest div").forEach(d=>{
-    const txt=removeVietnamese(d.textContent.toLowerCase());
-    d.style.display = txt.includes(key) ? "" : "none";
+    const txt = removeVietnamese(d.textContent.toLowerCase());
+    const ok = txt.includes(key);
+    d.style.display = ok ? "" : "none";
+    if(ok) hasItem = true;
   });
+
+  hasItem ? showSuggest() : hideSuggest();
 });
+
+document.addEventListener("click",(e)=>{
+  if(!e.target.closest(".form-add")){
+    hideSuggest();
+  }
+});
+
+function showSuggest(){
+  nameSuggest.style.display="block";
+}
+
+function hideSuggest(){
+  nameSuggest.style.display="none";
+}
 
 /* ===== UTILS ===== */
 function post(d){return fetch(SHEET_API,{method:"POST",body:JSON.stringify(d)})}
