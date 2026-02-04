@@ -319,6 +319,7 @@ const nameSuggest = document.getElementById("nameSuggest");
 function buildNameSuggest(){
   nameSuggest.innerHTML = "";
 
+  alert(allData.length)
   const set = new Set();
   allData.forEach(d=>{
     if(d.name) set.add(d.name.trim());
