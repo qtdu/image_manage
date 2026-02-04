@@ -239,7 +239,9 @@ textarea{
   color:#fff;
 }
 
-
+#nameSuggest{
+  display:none; /* 👈 thêm dòng này */
+}
   
 </style>
 </head>
@@ -328,18 +330,40 @@ function buildNameSuggest(){
     div.textContent = d.name;
     div.onclick = () => {
       nameInput.value = d.name;
+      nameSuggest.style.display = "none";
     };
+    
     nameSuggest.appendChild(div);
   });
 }
 
-
-nameInput.addEventListener("input",()=>{
-  const key=removeVietnamese(nameInput.value.toLowerCase());
+nameInput.addEventListener("focus",()=>{
   document.querySelectorAll("#nameSuggest div").forEach(d=>{
-    const txt=removeVietnamese(d.textContent.toLowerCase());
-    d.style.display = txt.includes(key) ? "" : "none";
+    d.style.display="";
   });
+  nameSuggest.style.display="block";
+});
+
+  
+nameInput.addEventListener("input",()=>{
+  const key = removeVietnamese(nameInput.value.toLowerCase());
+  let hasResult = false;
+
+  document.querySelectorAll("#nameSuggest div").forEach(d=>{
+    const txt = removeVietnamese(d.textContent.toLowerCase());
+    const ok = txt.includes(key);
+    d.style.display = ok ? "" : "none";
+    if(ok) hasResult = true;
+  });
+
+  // 👇 DÒNG QUYẾT ĐỊNH
+  nameSuggest.style.display = hasResult ? "block" : "none";
+});
+
+document.addEventListener("click",(e)=>{
+  if(!e.target.closest("#name1") && !e.target.closest("#nameSuggest")){
+    nameSuggest.style.display="none";
+  }
 });
 
 /* ===== UTILS ===== */
