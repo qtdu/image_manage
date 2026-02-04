@@ -376,17 +376,14 @@ function renderGrid(list){
 
 function filterList(){
   const key = searchBox.value.trim().toLowerCase();
+  const cards = document.querySelectorAll(".card");
 
-  // nếu chưa load data thì thôi
-  if (!Array.isArray(allData)) return;
-
-  // lọc theo NAME
-  const filtered = allData.filter(item =>
-    (item.name || "").toLowerCase().includes(key)
-  );
-
-  renderGrid(filtered);
+  cards.forEach(card => {
+    const name = card.querySelector(".name").innerText.toLowerCase();
+    card.style.display = name.includes(key) ? "" : "none";
+  });
 }
+
 
 
 
