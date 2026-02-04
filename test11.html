@@ -319,23 +319,20 @@ const nameSuggest = document.getElementById("nameSuggest");
 function buildNameSuggest(){
   nameSuggest.innerHTML = "";
 
-  alert(allData.length)
-  const set = new Set();
+  alert("allData = " + allData.length);
+
   allData.forEach(d=>{
-    if(d.name) set.add(d.name.trim());
-  });
- /*
-  set.forEach(n=>{
-    const div=document.createElement("div");
-    div.textContent=n;
-    div.onclick=()=>{
-      nameInput.value=n;
-      nameSuggest.innerHTML="";
+    if(!d.name) return;
+
+    const div = document.createElement("div");
+    div.textContent = d.name;
+    div.onclick = () => {
+      nameInput.value = d.name;
     };
     nameSuggest.appendChild(div);
   });
-  */
 }
+
 
 nameInput.addEventListener("input",()=>{
   const key=removeVietnamese(nameInput.value.toLowerCase());
