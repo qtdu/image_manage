@@ -221,19 +221,33 @@ textarea{
   #searchBox{max-width:140px;font-size:12px}
 }
 
+.name-wrap{
+  position: relative;
+}
+
 #nameSuggest{
-  border:1px solid #ccc;
-  margin-top:4px;
-  min-height:100px;
-  max-height:140px;
-  overflow:auto;
-  background:#fff;
-  font-size:13px;
+  position: absolute;
+  top: 100%;          /* ngay dưới input */
+  left: 0;
+  right: 0;
+  z-index: 9999;
+
+  background: #fff;
+  border: 1px solid #ccc;
+  border-top: none;
+
+  max-height: 180px;
+  overflow-y: auto;
+
+  display: none;
+  box-shadow: 0 4px 10px rgba(0,0,0,.15);
 }
+
 #nameSuggest div{
-  padding:6px 8px;
-  cursor:pointer;
+  padding: 6px 8px;
+  cursor: pointer;
 }
+
 #nameSuggest div:hover{
   background:#2d6cdf;
   color:#fff;
@@ -267,10 +281,14 @@ textarea{
     <input type="hidden" id="link">
 
     <div class="form-add">
-      <input id="name1" placeholder="Name">
+      <div class="name-wrap">
+        <input id="name1" placeholder="Name">
+        <div id="nameSuggest"></div>
+      </div>
       <button onclick="add()">➕ Thêm</button>
+      
     </div>
-    <div id="nameSuggest"></div>
+    
     <textarea id="note" rows="4" placeholder="Note"></textarea>
   </div>
 </div>
